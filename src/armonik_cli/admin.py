@@ -125,6 +125,8 @@ def check_task(client: ArmoniKTasks, task_ids: list):
         else:
             print(f"No task found with ID {task_id}")
 
+def sum(a, b):
+    return a+b
 
 
 def main():
@@ -170,6 +172,7 @@ def main():
     task_client = ArmoniKTasks(grpc_channel)
     session_client = ArmoniKSessions(grpc_channel)
     args.func(args)
+    print(sum(1,44))
 
 
 if __name__ == '__main__':
