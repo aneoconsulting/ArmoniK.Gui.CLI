@@ -18,7 +18,7 @@ def create_channel(endpoint: str,  ca: str = None, key: str = None, cert: str = 
     Returns:
         grpc.Channel: gRPC channel for communication
     """
-    if ca != None:
+    if ca:
             with open(ca, 'rb') as ca_file:
                 ca_data = ca_file.read()
             if cert != None and key!= None :
