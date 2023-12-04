@@ -21,7 +21,7 @@ def create_channel(endpoint: str,  ca: str = None, key: str = None, cert: str = 
     if ca:
             with open(ca, 'rb') as ca_file:
                 ca_data = ca_file.read()
-            if cert != None and key!= None :
+            if cert and key:
                 with open(cert, 'rb') as cert_file, open(key, 'rb') as key_file:
                     key_data = key_file.read()
                     cert_data = cert_file.read()
