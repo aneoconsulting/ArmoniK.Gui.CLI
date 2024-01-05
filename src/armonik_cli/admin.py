@@ -3,7 +3,8 @@ import argparse
 import grpc
 from armonik.client.sessions import ArmoniKSessions, SessionFieldFilter
 from armonik.client.tasks import ArmoniKTasks, TaskFieldFilter
-from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED
+from armonik.client.results import ArmoniKResults, ResultFieldFilter
+from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED, RESULT_STATUS_COMPLETED
 from armonik.common.filter import Filter
 
 
@@ -122,6 +123,7 @@ def list_tasks(client: ArmoniKTasks, task_filter: Filter):
 
     print(f"\nTotal tasks: {tasks[0]}\n")
 
+
 def check_task(client: ArmoniKTasks, task_ids: list):
     """
     Check the status of a task based on its ID.
@@ -138,6 +140,18 @@ def check_task(client: ArmoniKTasks, task_ids: list):
         else:
             print(f"No task found with ID {task_id}")
 
+
+def list_results(client: ArmoniKResults, result_filter: Filter):
+
+    page = 0
+    results = client.list_results(result_filter, page=page)
+    while len(results[1]) > 0:
+        for result in results[1]:
+            print(f'Result ID: {result.id}')
+        page += 1
+        result = client.list_results(result_filter, page=page)
+
+    print(f"\nTotal results: {results[0]}\n")
 
 
 def main():
@@ -178,11 +192,18 @@ def main():
     cancel_session_parser.add_argument(dest="session_ids", nargs="+", help="Session IDs to cancel")
     cancel_session_parser.set_defaults(func=lambda args: cancel_sessions(session_client, args.session_ids))
 
+    list_result_parser = subparsers.add_parser('list-result', help='List results with specific filters')
+    group_list_result = list_result_parser.add_mutually_exclusive_group(required=True)
+    group_list_result.add_argument("--completed", dest="filter", action="store_const", const=ResultFieldFilter.STATUS == RESULT_STATUS_COMPLETED, help="Select completed result")
+    group_list_result.set_defaults(func=lambda args: list_results(result_client, args.filter))
+
     args = parser.parse_args()
     grpc_channel = create_channel(args.endpoint, args.ca, args.key, args.cert)
     task_client = ArmoniKTasks(grpc_channel)
     session_client = ArmoniKSessions(grpc_channel)
+    result_client = ArmoniKResults(grpc_channel)
     args.func(args)
+
 
 
 if __name__ == '__main__':
