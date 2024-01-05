@@ -179,10 +179,12 @@ def test_create_session():
     assert session_id == "session-id"
 
 def test_list_running_sessions():
-    session_client: ArmoniKSessions = get_client("Sessions")
-    sessions = admin.list_sessions(session_client, SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING)
-    assert sessions is not None
-    assert len(sessions) > 0 
+    sessions_client: ArmoniKSessions = get_client("Sessions")
+    sessions = admin.list_sessions(sessions_client, SessionFieldFilter.STATUS == SessionStatus.RUNNING)
+
+    assert rpc_called("Sessions", "ListSessions", 2)
+    # TODO: Mock must be updated to return something and so that changes the following assertions
+    assert sessions == []
 
 # endpoint = 'http://localhost:5000/calls.json'  
 # reset_endpoint = "http://localhost:5000/reset"
