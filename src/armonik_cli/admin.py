@@ -37,16 +37,19 @@ def list_sessions(client: ArmoniKSessions, session_filter: Filter):
         client (ArmoniKSessions): ArmoniKSessions instance for session management
         session_filter (Filter) : Filter for the session
     """
+    result = []
     page = 0
     sessions = client.list_sessions(session_filter, page=page)
     
     while len(sessions[1]) > 0:
         for session in sessions[1]:
             print(f'Session ID: {session.session_id}')
+            result.append(session)
         page += 1
         sessions = client.list_sessions(session_filter, page=page)
 
     print(f'\nNumber of sessions: {sessions[0]}\n')
+    return result
 
 
 def cancel_sessions(client: ArmoniKSessions, sessions: list):
@@ -172,7 +175,7 @@ def parse_arguments(args=None):
     group_list_session.add_argument("--all", dest="filter", action="store_const", const=(SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING) | (SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED) , help="Select all sessions")
     group_list_session.add_argument("--running", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING, help="Select running sessions")
     group_list_session.add_argument("--cancelled", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED, help="Select cancelled sessions")
-    group_list_session.set_defaults(func=lambda args: list_sessions(create_session_client(args.endpoint), args.filter))
+    group_list_session.set_defaults(func=lambda args: print(list_sessions(create_session_client(args.endpoint), args.filter)))
  
     
     list_task_parser = subparsers.add_parser('list-task', help='List tasks with specific filters')
