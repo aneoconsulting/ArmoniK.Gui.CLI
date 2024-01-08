@@ -101,16 +101,18 @@ def list_tasks(client: ArmoniKTasks, task_filter: Filter):
         client (ArmoniKTasks): ArmoniKTasks instance for task management
         task_filter (Filter): Filter for the task
     """
-
+    result = []
     page = 0
     tasks = client.list_tasks(task_filter, page=page)
     while len(tasks[1]) > 0:
         for task in tasks[1]:
             print(f'Task ID: {task.id}')
+            result.append(task)
         page += 1
         tasks = client.list_tasks(task_filter, page=page)
 
     print(f"\nTotal tasks: {tasks[0]}\n")
+    return result
 
 def check_task(client: ArmoniKTasks, task_ids: list):
     """
@@ -172,7 +174,7 @@ def parse_arguments(args=None):
 
     list_session_parser = subparsers.add_parser('list-session', help='List sessions with specific filters')
     group_list_session = list_session_parser.add_mutually_exclusive_group(required=True)
-    group_list_session.add_argument("--all", dest="filter", action="store_const", const=(SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING) | (SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED) , help="Select all sessions")
+    group_list_session.add_argument("--all", dest="filter", action="store_const", const=None , help="Select all sessions")
     group_list_session.add_argument("--running", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING, help="Select running sessions")
     group_list_session.add_argument("--cancelled", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED, help="Select cancelled sessions")
     group_list_session.set_defaults(func=lambda args: print(list_sessions(create_session_client(args.endpoint), args.filter)))
