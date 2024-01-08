@@ -122,13 +122,16 @@ def check_task(client: ArmoniKTasks, task_ids: list):
         client (ArmoniKTasks): ArmoniKTasks instance for task management.
         task_id (str): ID of the task to check.
     """
+    result = []
     for task_id in task_ids:
-        tasks = client.list_tasks(TaskFieldFilter.TASK_ID == task_id)
-        if len(tasks[1]) > 0:
+        tasks = client.get_task(task_id)
+        if task_id == tasks.id:
             print(f"\nTask information for task ID {task_id} :\n")
-            print(tasks[1])
+            print(tasks)
+            result.append(tasks)
         else:
             print(f"No task found with ID {task_id}")
+    return result
 
 
 def create_session_client(endpoint: str) -> ArmoniKSessions:
