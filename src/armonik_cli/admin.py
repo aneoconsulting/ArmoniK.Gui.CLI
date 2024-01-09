@@ -49,17 +49,23 @@ def list_sessions(client: ArmoniKSessions, session_filter: Filter):
     Args:
         client (ArmoniKSessions): ArmoniKSessions instance for session management
         session_filter (Filter) : Filter for the session
+
+    Returns:
+        list: A list of filtered sessions
     """
+    result = []
     page = 0
     sessions = client.list_sessions(session_filter, page=page)
     
     while len(sessions[1]) > 0:
         for session in sessions[1]:
             print(f'Session ID: {session.session_id}')
+            result.append(session)
         page += 1
         sessions = client.list_sessions(session_filter, page=page)
 
     print(f'\nNumber of sessions: {sessions[0]}\n')
+    return result
 
 
 def cancel_sessions(client: ArmoniKSessions, sessions: list):
@@ -110,17 +116,22 @@ def list_tasks(client: ArmoniKTasks, task_filter: Filter):
     Args:
         client (ArmoniKTasks): ArmoniKTasks instance for task management
         task_filter (Filter): Filter for the task
-    """
 
+    Returns:
+        list: A list of filtered tasks
+    """
+    result = []
     page = 0
     tasks = client.list_tasks(task_filter, page=page)
     while len(tasks[1]) > 0:
         for task in tasks[1]:
             print(f'Task ID: {task.id}')
+            result.append(task)
         page += 1
         tasks = client.list_tasks(task_filter, page=page)
 
     print(f"\nTotal tasks: {tasks[0]}\n")
+    return result
 
 def check_tasks(client: ArmoniKTasks, task_ids: list) -> list:
     """
