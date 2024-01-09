@@ -1,11 +1,13 @@
+import sys
 import argparse
 import grpc
 from armonik.client.sessions import ArmoniKSessions, SessionFieldFilter
 from armonik.client.tasks import ArmoniKTasks, TaskFieldFilter
-from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED, SESSION_STATUS_UNSPECIFIED
+from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED
 from armonik.common.filter import Filter
 
-def create_channel(endpoint: str,  ca: str = None, cert: str = None , key: str = None) -> grpc.Channel:
+
+def create_channel(endpoint: str,  ca: str, key: str, cert: str) -> grpc.Channel:
     """
     Create a gRPC channel for communication with the ArmoniK control plane
 
@@ -17,15 +19,26 @@ def create_channel(endpoint: str,  ca: str = None, cert: str = None , key: str =
 
     Returns:
         grpc.Channel: gRPC channel for communication
-    """
-    if ca != None and cert != None and key!= None:
-        ca_data = open(ca, 'rb').read()
-        cert_data = open(cert, 'rb').read()
-        key_data = open(key, 'rb').read()
-        credentials = grpc.ssl_channel_credentials(ca_data, key_data, cert_data)
-        return grpc.secure_channel(endpoint, credentials)
-    else:
-        return grpc.insecure_channel(endpoint)
+    """    
+    try:
+        if ca:
+            with open(ca, 'rb') as ca_file:
+                ca_data = ca_file.read()
+            if cert and key:
+                with open(cert, 'rb') as cert_file, open(key, 'rb') as key_file:
+                    key_data = key_file.read()
+                    cert_data = cert_file.read()
+            else:
+                key_data = None
+                cert_data = None
+
+            credentials = grpc.ssl_channel_credentials(ca_data, key_data, cert_data)
+            return grpc.secure_channel(endpoint, credentials)
+        else:
+            return grpc.insecure_channel(endpoint)
+    except FileNotFoundError as e:
+        print(e)
+        sys.exit(1)    
 
 
 
@@ -166,7 +179,7 @@ def main():
     cancel_session_parser.set_defaults(func=lambda args: cancel_sessions(session_client, args.session_ids))
 
     args = parser.parse_args()
-    grpc_channel = create_channel(args.endpoint)
+    grpc_channel = create_channel(args.endpoint, args.ca, args.key, args.cert)
     task_client = ArmoniKTasks(grpc_channel)
     session_client = ArmoniKSessions(grpc_channel)
     args.func(args)
