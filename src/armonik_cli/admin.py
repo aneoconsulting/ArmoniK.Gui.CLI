@@ -169,7 +169,7 @@ def main():
 
     list_session_parser = subparsers.add_parser('list-session', help='List sessions with specific filters')
     group_list_session = list_session_parser.add_mutually_exclusive_group(required=True)
-    group_list_session.add_argument("--all", dest="filter", action="store_const", const=(SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING) | (SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED) , help="Select all sessions")
+    group_list_session.add_argument("--all", dest="filter", action="store_const", const=None , help="Select all sessions")
     group_list_session.add_argument("--running", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING, help="Select running sessions")
     group_list_session.add_argument("--cancelled", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED, help="Select cancelled sessions")
     group_list_session.set_defaults(func=lambda args: list_sessions(session_client, args.filter))
