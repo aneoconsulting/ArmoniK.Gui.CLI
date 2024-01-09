@@ -122,23 +122,27 @@ def list_tasks(client: ArmoniKTasks, task_filter: Filter):
 
     print(f"\nTotal tasks: {tasks[0]}\n")
 
-def check_task(client: ArmoniKTasks, task_ids: list):
+def check_tasks(client: ArmoniKTasks, task_ids: list) -> list:
     """
     Check the status of a task based on its ID.
 
     Args:
         client (ArmoniKTasks): ArmoniKTasks instance for task management.
         task_id (str): ID of the task to check.
+    
+    Returns:
+        list: A list containing task information for the provided task IDs.
     """
+    result = []
     for task_id in task_ids:
-        tasks = client.list_tasks(TaskFieldFilter.TASK_ID == task_id)
-        if len(tasks[1]) > 0:
+        tasks = client.get_task(task_id)
+        if task_id == tasks.id:
             print(f"\nTask information for task ID {task_id} :\n")
-            print(tasks[1])
+            print(tasks)
+            result.append(tasks)
         else:
             print(f"No task found with ID {task_id}")
-
-
+    return result
 
 def main():
 
@@ -171,7 +175,7 @@ def main():
 
     check_task_parser = subparsers.add_parser('check-task', help='Check the status of a specific task')
     check_task_parser.add_argument(dest="task_ids", nargs="+",  help="Select ID from TASK")
-    check_task_parser.set_defaults(func=lambda args: check_task(task_client, args.task_ids))
+    check_task_parser.set_defaults(func=lambda args: check_tasks(task_client, args.task_ids))
 
 
     cancel_session_parser = subparsers.add_parser('cancel-session', help='Cancel sessions')
