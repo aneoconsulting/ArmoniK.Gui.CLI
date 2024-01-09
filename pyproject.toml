@@ -30,3 +30,18 @@ write_to = "pkg/_version.py"
 [tool.setuptools.packages.find]
 where= ["src"]
 
+[project.optional-dependencies]
+tests = [
+  'coverage',
+  'pytest',
+  'pytest-cov',
+  'pytest-benchmark[histogram]',
+  'pytest-mock',
+  'ruff'
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
