@@ -138,6 +138,28 @@ def check_task(client: ArmoniKTasks, task_ids: list):
         else:
             print(f"No task found with ID {task_id}")
 
+def get_task_durations(client: ArmoniKTasks, task_filter: Filter):
+    """
+    Get task durations per partition
+
+    Args:
+        client (ArmoniKTasks): Instance of ArmoniKTasks
+        task_filter (Filter): Filter for the task
+    """
+    tasks = client.list_tasks(task_filter)
+    durations = {}
+
+    for task in tasks[1]:
+        partition = task.options.partition_id
+        duration = (task.ended_at - task.started_at).total_seconds()
+
+        if partition in durations:
+            durations[partition] += duration
+        else:
+            durations[partition] = duration
+
+    for partition, duration in durations.items():
+        print(f"Partition: {partition} = {duration} secondes")
 
 
 def main():
@@ -177,6 +199,10 @@ def main():
     cancel_session_parser = subparsers.add_parser('cancel-session', help='Cancel sessions')
     cancel_session_parser.add_argument(dest="session_ids", nargs="+", help="Session IDs to cancel")
     cancel_session_parser.set_defaults(func=lambda args: cancel_sessions(session_client, args.session_ids))
+
+    task_duration_parser = subparsers.add_parser('task-duration', help='Print task durations per partition')
+    task_duration_parser.add_argument(dest="session_id", help="Select ID from SESSION")
+    task_duration_parser.set_defaults(func=lambda args: get_task_durations(task_client, create_task_filter(args.session_id, True, False, False)))
 
     args = parser.parse_args()
     grpc_channel = create_channel(args.endpoint, args.ca, args.key, args.cert)
