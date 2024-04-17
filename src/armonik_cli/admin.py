@@ -3,7 +3,8 @@ import argparse
 import grpc
 from armonik.client.sessions import ArmoniKSessions, SessionFieldFilter
 from armonik.client.tasks import ArmoniKTasks, TaskFieldFilter
-from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED
+from armonik.client.results import ArmoniKResults, ResultFieldFilter
+from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED, RESULT_STATUS_COMPLETED, RESULT_STATUS_CREATED
 from armonik.common.filter import Filter
 
 
@@ -138,6 +139,19 @@ def check_task(client: ArmoniKTasks, task_ids: list):
         else:
             print(f"No task found with ID {task_id}")
 
+def list_results(client: ArmoniKResults, result_filter: Filter):
+
+    page = 0
+    results = client.list_results(result_filter, page=page)
+    while len(results[1]) > 0:
+        for result in results[1]:
+            print(f'Result ID: {result.result_id}')
+        page += 1
+        results = client.list_results(result_filter, page=page)
+
+    print(f"\nTotal results: {results[0]}\n")
+
+
 def get_task_durations(client: ArmoniKTasks, task_filter: Filter):
     """
     Get task durations per partition
@@ -204,10 +218,18 @@ def main():
     task_duration_parser.add_argument(dest="session_id", help="Select ID from SESSION")
     task_duration_parser.set_defaults(func=lambda args: get_task_durations(task_client, create_task_filter(args.session_id, True, False, False)))
 
+    list_result_parser = subparsers.add_parser('list-result', help='List results with specific filters')
+    group_list_result = list_result_parser.add_mutually_exclusive_group(required=True)
+    group_list_result.add_argument("--all", dest="filter", action="store_const", const=None, help="Select completed result")
+    group_list_result.add_argument("--completed", dest="filter", action="store_const", const=ResultFieldFilter.STATUS == RESULT_STATUS_COMPLETED, help="Select completed result")
+    group_list_result.add_argument("--created", dest="filter", action="store_const", const=ResultFieldFilter.STATUS == RESULT_STATUS_CREATED, help="Select created result")
+    group_list_result.set_defaults(func=lambda args: list_results(result_client, args.filter))
+
     args = parser.parse_args()
     grpc_channel = create_channel(args.endpoint, args.ca, args.key, args.cert)
     task_client = ArmoniKTasks(grpc_channel)
     session_client = ArmoniKSessions(grpc_channel)
+    result_client = ArmoniKResults(grpc_channel)
     args.func(args)
 
 
