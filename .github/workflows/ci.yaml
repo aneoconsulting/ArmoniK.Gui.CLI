@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-format:
+    name: Check linting and formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+        with:
+          fetch-depth: 0
+
+      - name: pip update
+        run: python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: python -m pip install build setuptools_scm[toml]
+
+      - name: Install dependencies
+        run: python -m pip install .[dev]
+
+      - name: Lint
+        run: python -m ruff .
+
+      - name: Check format
+        run: python -m ruff format .
+
+      - name: Check Diff
+        run: |
+          DIFF="$(git diff --name-only)"
+
+          if [ -z "$DIFF" ]; then
+            echo "OK: Format is clean"
+          else
+            echo "Error: Format was not clean"
+            echo "List of files:"
+            echo "$DIFF"
+            git diff
+            exit 1
+          fi
+
+  build-test:
+    name: Build and test Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+        with:
+          fetch-depth: 0
+
+      - name: pip update
+        run: python -m pip install --upgrade pip
+
+      - name: Install dependencies
+        run: python -m pip install build setuptools_scm[toml]
+
+      - name: Install dependencies
+        run: python -m pip install .[tests]
+
+      - name: Run tests
+        run: python -m pytest tests
+

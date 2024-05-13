@@ -4,11 +4,18 @@ import grpc
 from armonik.client.sessions import ArmoniKSessions, SessionFieldFilter
 from armonik.client.tasks import ArmoniKTasks, TaskFieldFilter
 from armonik.client.results import ArmoniKResults, ResultFieldFilter
-from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED, RESULT_STATUS_COMPLETED, RESULT_STATUS_CREATED
+from armonik.common.enumwrapper import (
+    TASK_STATUS_ERROR,
+    TASK_STATUS_CREATING,
+    SESSION_STATUS_RUNNING,
+    SESSION_STATUS_CANCELLED,
+    RESULT_STATUS_COMPLETED,
+    RESULT_STATUS_CREATED,
+)
 from armonik.common.filter import Filter
 
 
-def create_channel(endpoint: str,  ca: str, key: str, cert: str) -> grpc.Channel:
+def create_channel(endpoint: str, ca: str, key: str, cert: str) -> grpc.Channel:
     """
     Create a gRPC channel for communication with the ArmoniK control plane
 
@@ -20,13 +27,13 @@ def create_channel(endpoint: str,  ca: str, key: str, cert: str) -> grpc.Channel
 
     Returns:
         grpc.Channel: gRPC channel for communication
-    """    
+    """
     try:
         if ca:
-            with open(ca, 'rb') as ca_file:
+            with open(ca, "rb") as ca_file:
                 ca_data = ca_file.read()
             if cert and key:
-                with open(cert, 'rb') as cert_file, open(key, 'rb') as key_file:
+                with open(cert, "rb") as cert_file, open(key, "rb") as key_file:
                     key_data = key_file.read()
                     cert_data = cert_file.read()
             else:
@@ -39,8 +46,7 @@ def create_channel(endpoint: str,  ca: str, key: str, cert: str) -> grpc.Channel
             return grpc.insecure_channel(endpoint)
     except FileNotFoundError as e:
         print(e)
-        sys.exit(1)    
-
+        sys.exit(1)
 
 
 def list_sessions(client: ArmoniKSessions, session_filter: Filter):
@@ -53,14 +59,14 @@ def list_sessions(client: ArmoniKSessions, session_filter: Filter):
     """
     page = 0
     sessions = client.list_sessions(session_filter, page=page)
-    
+
     while len(sessions[1]) > 0:
         for session in sessions[1]:
-            print(f'Session ID: {session.session_id}')
+            print(f"Session ID: {session.session_id}")
         page += 1
         sessions = client.list_sessions(session_filter, page=page)
 
-    print(f'\nNumber of sessions: {sessions[0]}\n')
+    print(f"\nNumber of sessions: {sessions[0]}\n")
 
 
 def cancel_sessions(client: ArmoniKSessions, sessions: list):
@@ -79,7 +85,9 @@ def cancel_sessions(client: ArmoniKSessions, sessions: list):
             print(f"Error for canceling session {session_id}: {error.details()}")
 
 
-def create_task_filter(session_id: str, all: bool , creating: bool, error: bool) -> Filter:
+def create_task_filter(
+    session_id: str, all: bool, creating: bool, error: bool
+) -> Filter:
     """
     Create a task Filter based on the provided options
 
@@ -95,14 +103,18 @@ def create_task_filter(session_id: str, all: bool , creating: bool, error: bool)
     if all:
         tasks_filter = TaskFieldFilter.SESSION_ID == session_id
     elif creating:
-        tasks_filter = (TaskFieldFilter.SESSION_ID == session_id) & (TaskFieldFilter.STATUS == TASK_STATUS_CREATING)
+        tasks_filter = (TaskFieldFilter.SESSION_ID == session_id) & (
+            TaskFieldFilter.STATUS == TASK_STATUS_CREATING
+        )
     elif error:
-        tasks_filter = (TaskFieldFilter.SESSION_ID == session_id) & (TaskFieldFilter.STATUS == TASK_STATUS_ERROR)
+        tasks_filter = (TaskFieldFilter.SESSION_ID == session_id) & (
+            TaskFieldFilter.STATUS == TASK_STATUS_ERROR
+        )
     else:
-            raise ValueError("SELECT ARGUMENT [--all | --creating | --error]")
+        raise ValueError("SELECT ARGUMENT [--all | --creating | --error]")
 
     return tasks_filter
-    
+
 
 def list_tasks(client: ArmoniKTasks, task_filter: Filter):
     """
@@ -117,11 +129,12 @@ def list_tasks(client: ArmoniKTasks, task_filter: Filter):
     tasks = client.list_tasks(task_filter, page=page)
     while len(tasks[1]) > 0:
         for task in tasks[1]:
-            print(f'Task ID: {task.id}')
+            print(f"Task ID: {task.id}")
         page += 1
         tasks = client.list_tasks(task_filter, page=page)
 
     print(f"\nTotal tasks: {tasks[0]}\n")
+
 
 def check_task(client: ArmoniKTasks, task_ids: list):
     """
@@ -139,13 +152,13 @@ def check_task(client: ArmoniKTasks, task_ids: list):
         else:
             print(f"No task found with ID {task_id}")
 
-def list_results(client: ArmoniKResults, result_filter: Filter):
 
+def list_results(client: ArmoniKResults, result_filter: Filter):
     page = 0
     results = client.list_results(result_filter, page=page)
     while len(results[1]) > 0:
         for result in results[1]:
-            print(f'Result ID: {result.result_id}')
+            print(f"Result ID: {result}")
         page += 1
         results = client.list_results(result_filter, page=page)
 
@@ -176,11 +189,20 @@ def get_task_durations(client: ArmoniKTasks, task_filter: Filter):
         print(f"Partition: {partition} = {duration} secondes")
 
 
-def main():
+def hello():
+    return "Hello, World!"
 
-    parser = argparse.ArgumentParser(description="ArmoniK Admin CLI to perform administration tasks for ArmoniK")
-    parser.add_argument("-v","--version", action="version", version="ArmoniK Admin CLI 0.0.1")
-    parser.add_argument("--endpoint", default="localhost:5001", help="ArmoniK control plane endpoint")
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="ArmoniK Admin CLI to perform administration tasks for ArmoniK"
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version="ArmoniK Admin CLI 0.0.1"
+    )
+    parser.add_argument(
+        "--endpoint", default="localhost:5001", help="ArmoniK control plane endpoint"
+    )
     parser.add_argument("--ca", help="CA file for mutual TLS")
     parser.add_argument("--cert", help="Certificate for mutual TLS")
     parser.add_argument("--key", help="Private key for mutual TLS")
@@ -188,42 +210,115 @@ def main():
 
     subparsers = parser.add_subparsers()
 
-    list_session_parser = subparsers.add_parser('list-session', help='List sessions with specific filters')
+    list_session_parser = subparsers.add_parser(
+        "list-session", help="List sessions with specific filters"
+    )
     group_list_session = list_session_parser.add_mutually_exclusive_group(required=True)
-    group_list_session.add_argument("--all", dest="filter", action="store_const", const=None, help="Select all sessions")
-    group_list_session.add_argument("--running", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING, help="Select running sessions")
-    group_list_session.add_argument("--cancelled", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED, help="Select cancelled sessions")
-    group_list_session.set_defaults(func=lambda args: list_sessions(session_client, args.filter))
- 
-    
-    list_task_parser = subparsers.add_parser('list-task', help='List tasks with specific filters')
+    group_list_session.add_argument(
+        "--all",
+        dest="filter",
+        action="store_const",
+        const=None,
+        help="Select all sessions",
+    )
+    group_list_session.add_argument(
+        "--running",
+        dest="filter",
+        action="store_const",
+        const=SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING,
+        help="Select running sessions",
+    )
+    group_list_session.add_argument(
+        "--cancelled",
+        dest="filter",
+        action="store_const",
+        const=SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED,
+        help="Select cancelled sessions",
+    )
+    group_list_session.set_defaults(
+        func=lambda args: list_sessions(session_client, args.filter)
+    )
+
+    list_task_parser = subparsers.add_parser(
+        "list-task", help="List tasks with specific filters"
+    )
     list_task_parser.add_argument(dest="session_id", help="Select ID from SESSION")
 
     group_list_task = list_task_parser.add_mutually_exclusive_group(required=True)
-    group_list_task.add_argument("--all", dest="all", action="store_true", help="Select all tasks")
-    group_list_task.add_argument("--creating", dest="creating", action="store_true", help="Select creating tasks")
-    group_list_task.add_argument("--error", dest="error", action="store_true", help="Select error tasks")
-    group_list_task.set_defaults(func=lambda args: list_tasks(task_client, create_task_filter(args.session_id, args.all, args.creating, args.error)))
+    group_list_task.add_argument(
+        "--all", dest="all", action="store_true", help="Select all tasks"
+    )
+    group_list_task.add_argument(
+        "--creating", dest="creating", action="store_true", help="Select creating tasks"
+    )
+    group_list_task.add_argument(
+        "--error", dest="error", action="store_true", help="Select error tasks"
+    )
+    group_list_task.set_defaults(
+        func=lambda args: list_tasks(
+            task_client,
+            create_task_filter(args.session_id, args.all, args.creating, args.error),
+        )
+    )
 
-    check_task_parser = subparsers.add_parser('check-task', help='Check the status of a specific task')
-    check_task_parser.add_argument(dest="task_ids", nargs="+",  help="Select ID from TASK")
-    check_task_parser.set_defaults(func=lambda args: check_task(task_client, args.task_ids))
+    check_task_parser = subparsers.add_parser(
+        "check-task", help="Check the status of a specific task"
+    )
+    check_task_parser.add_argument(
+        dest="task_ids", nargs="+", help="Select ID from TASK"
+    )
+    check_task_parser.set_defaults(
+        func=lambda args: check_task(task_client, args.task_ids)
+    )
 
+    cancel_session_parser = subparsers.add_parser(
+        "cancel-session", help="Cancel sessions"
+    )
+    cancel_session_parser.add_argument(
+        dest="session_ids", nargs="+", help="Session IDs to cancel"
+    )
+    cancel_session_parser.set_defaults(
+        func=lambda args: cancel_sessions(session_client, args.session_ids)
+    )
 
-    cancel_session_parser = subparsers.add_parser('cancel-session', help='Cancel sessions')
-    cancel_session_parser.add_argument(dest="session_ids", nargs="+", help="Session IDs to cancel")
-    cancel_session_parser.set_defaults(func=lambda args: cancel_sessions(session_client, args.session_ids))
-
-    task_duration_parser = subparsers.add_parser('task-duration', help='Print task durations per partition')
+    task_duration_parser = subparsers.add_parser(
+        "task-duration", help="Print task durations per partition"
+    )
     task_duration_parser.add_argument(dest="session_id", help="Select ID from SESSION")
-    task_duration_parser.set_defaults(func=lambda args: get_task_durations(task_client, create_task_filter(args.session_id, True, False, False)))
+    task_duration_parser.set_defaults(
+        func=lambda args: get_task_durations(
+            task_client, create_task_filter(args.session_id, True, False, False)
+        )
+    )
 
-    list_result_parser = subparsers.add_parser('list-result', help='List results with specific filters')
+    list_result_parser = subparsers.add_parser(
+        "list-result", help="List results with specific filters"
+    )
     group_list_result = list_result_parser.add_mutually_exclusive_group(required=True)
-    group_list_result.add_argument("--all", dest="filter", action="store_const", const=None, help="Select completed result")
-    group_list_result.add_argument("--completed", dest="filter", action="store_const", const=ResultFieldFilter.STATUS == RESULT_STATUS_COMPLETED, help="Select completed result")
-    group_list_result.add_argument("--created", dest="filter", action="store_const", const=ResultFieldFilter.STATUS == RESULT_STATUS_CREATED, help="Select created result")
-    group_list_result.set_defaults(func=lambda args: list_results(result_client, args.filter))
+    group_list_result.add_argument(
+        "--all",
+        dest="filter",
+        action="store_const",
+        const=None,
+        help="Select completed result",
+    )
+    group_list_result.add_argument(
+        "--completed",
+        dest="filter",
+        action="store_const",
+        const=ResultFieldFilter.STATUS == RESULT_STATUS_COMPLETED,
+        help="Select completed result",
+    )
+    group_list_result.add_argument(
+        "--created",
+        dest="filter",
+        action="store_const",
+        const=ResultFieldFilter.STATUS == RESULT_STATUS_CREATED,
+        help="Select created result",
+    )
+    group_list_result.set_defaults(
+        func=lambda args: list_results(result_client, args.filter)
+    )
 
     args = parser.parse_args()
     grpc_channel = create_channel(args.endpoint, args.ca, args.key, args.cert)
@@ -233,5 +328,5 @@ def main():
     args.func(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
