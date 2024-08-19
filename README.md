@@ -23,7 +23,7 @@ sudo apt install python3-venv
 Clone the project from https://github.com/aneoconsulting
 
 ```bash
-git clone git@github.com/aneoconsulting/ArmoniK.Admin.CLI.git
+git clone git@github.com:aneoconsulting/ArmoniK.Admin.CLI.git
 ```
 
 Navigate in the root directory
@@ -51,6 +51,12 @@ Install dependencies using the generated .whl file
 ```bash
 pip install dist/<name_of_the_package>.whl
 ```
+
+Verify the installation
+
+``bash
+armonik_admin_cli --version
+``
 
 ## Documentation
 
