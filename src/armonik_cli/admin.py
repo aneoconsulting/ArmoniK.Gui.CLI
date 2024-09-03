@@ -1,46 +1,10 @@
-import sys
 import argparse
 import grpc
-from armonik.client.sessions import ArmoniKSessions, SessionFieldFilter
-from armonik.client.tasks import ArmoniKTasks, TaskFieldFilter
-from armonik.common.enumwrapper import TASK_STATUS_ERROR, TASK_STATUS_CREATING , SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED
+from armonik.client.sessions import ArmoniKSessions, Session
+from armonik.client.tasks import ArmoniKTasks, Task
+from armonik.common.channel import create_channel
+from armonik.common.enumwrapper import SESSION_STATUS_RUNNING, SESSION_STATUS_CANCELLED, TaskStatus
 from armonik.common.filter import Filter
-
-
-def create_channel(endpoint: str,  ca: str, key: str, cert: str) -> grpc.Channel:
-    """
-    Create a gRPC channel for communication with the ArmoniK control plane
-
-    Args:
-        ca (str): CA file path for mutual TLS
-        cert (str): Certificate file path for mutual TLS
-        key (str): Private key file path for mutual TLS
-        endpoint (str): ArmoniK control plane endpoint
-
-    Returns:
-        grpc.Channel: gRPC channel for communication
-    """    
-    try:
-        if ca:
-            with open(ca, 'rb') as ca_file:
-                ca_data = ca_file.read()
-            if cert and key:
-                with open(cert, 'rb') as cert_file, open(key, 'rb') as key_file:
-                    key_data = key_file.read()
-                    cert_data = cert_file.read()
-            else:
-                key_data = None
-                cert_data = None
-
-            credentials = grpc.ssl_channel_credentials(ca_data, key_data, cert_data)
-            return grpc.secure_channel(endpoint, credentials)
-        else:
-            return grpc.insecure_channel(endpoint)
-    except FileNotFoundError as e:
-        print(e)
-        sys.exit(1)    
-
-
 
 def list_sessions(client: ArmoniKSessions, session_filter: Filter):
     """
@@ -74,8 +38,8 @@ def cancel_sessions(client: ArmoniKSessions, sessions: list):
         try:
             client.cancel_session(session_id)
             print(f"Session {session_id} canceled successfully")
-        except grpc._channel._InactiveRpcError as error:
-            print(f"Error for canceling session {session_id}: {error.details()}")
+        except grpc.RpcError as error:
+            print(f"Error for canceling session {session_id}: {error}")
 
 
 def create_task_filter(session_id: str, all: bool , creating: bool, error: bool) -> Filter:
@@ -91,14 +55,13 @@ def create_task_filter(session_id: str, all: bool , creating: bool, error: bool)
     Returns:
         Filter object
     """
-    if all:
-        tasks_filter = TaskFieldFilter.SESSION_ID == session_id
-    elif creating:
-        tasks_filter = (TaskFieldFilter.SESSION_ID == session_id) & (TaskFieldFilter.STATUS == TASK_STATUS_CREATING)
+    tasks_filter = Task.session_id == session_id
+    if creating:
+        tasks_filter &= Task.status == TaskStatus.CREATING
     elif error:
-        tasks_filter = (TaskFieldFilter.SESSION_ID == session_id) & (TaskFieldFilter.STATUS == TASK_STATUS_ERROR)
-    else:
-            raise ValueError("SELECT ARGUMENT [--all | --creating | --error]")
+        tasks_filter &= Task.status == TaskStatus.ERROR
+    elif not all:
+        raise ValueError("SELECT ARGUMENT [--all | --creating | --error]")
 
     return tasks_filter
     
@@ -131,7 +94,7 @@ def check_task(client: ArmoniKTasks, task_ids: list):
         task_id (str): ID of the task to check.
     """
     for task_id in task_ids:
-        tasks = client.list_tasks(TaskFieldFilter.TASK_ID == task_id)
+        tasks = client.list_tasks(Task.id == task_id)
         if len(tasks[1]) > 0:
             print(f"\nTask information for task ID {task_id} :\n")
             print(tasks[1])
@@ -177,8 +140,8 @@ def main():
     list_session_parser = subparsers.add_parser('list-session', help='List sessions with specific filters')
     group_list_session = list_session_parser.add_mutually_exclusive_group(required=True)
     group_list_session.add_argument("--all", dest="filter", action="store_const", const=None, help="Select all sessions")
-    group_list_session.add_argument("--running", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_RUNNING, help="Select running sessions")
-    group_list_session.add_argument("--cancelled", dest="filter", action="store_const", const=SessionFieldFilter.STATUS == SESSION_STATUS_CANCELLED, help="Select cancelled sessions")
+    group_list_session.add_argument("--running", dest="filter", action="store_const", const=Session.status == SESSION_STATUS_RUNNING, help="Select running sessions")
+    group_list_session.add_argument("--cancelled", dest="filter", action="store_const", const=Session.status == SESSION_STATUS_CANCELLED, help="Select cancelled sessions")
     group_list_session.set_defaults(func=lambda args: list_sessions(session_client, args.filter))
  
     
@@ -205,7 +168,7 @@ def main():
     task_duration_parser.set_defaults(func=lambda args: get_task_durations(task_client, create_task_filter(args.session_id, True, False, False)))
 
     args = parser.parse_args()
-    grpc_channel = create_channel(args.endpoint, args.ca, args.key, args.cert)
+    grpc_channel = create_channel(args.endpoint, certificate_authority=args.ca, client_key=args.key, client_certificate=args.cert)
     task_client = ArmoniKTasks(grpc_channel)
     session_client = ArmoniKSessions(grpc_channel)
     args.func(args)

@@ -13,7 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "armonik >= 3.15.0",
+    "armonik >= 3.20",
 ]
 dynamic = ["version"]
 
