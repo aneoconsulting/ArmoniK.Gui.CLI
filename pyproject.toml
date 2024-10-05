@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools",
+            "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "armonik_cli"
+description = "Command-line tool to monitor and manage ArmoniK clusters."
+readme = "README.md"
+dynamic = ["version"]
+requires-python = ">=3.8"
+keywords = ["cloud", "HTC", "CLI", "ArmoniK", "Aneo"]
+license = {text = "Apache v2.0 LICENSE"}
+classifiers = [
+    "Development Status :: 4 - Beta", # see https://pypi.org/classifiers/
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Topic :: Internet",
+]
+dependencies = [
+    "armonik",
+    "click",
+    "rich_click",
+    "pydantic",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/aneoconsulting/ArmoniK.Api"
+"Bug Tracker" = "https://github.com/aneoconsulting/ArmoniK/issues"
+
+[tool.setuptools]
+include-package-data = true
+dynamic = {version = {attr = "armonik_cli.__version__"}}
+
+[tool.setuptools.packages.find]
+where= ["src"]
+exclude=['tests']
+
+[project.optional-dependencies]
+tests = [
+  'coverage',
+  'pytest',
+  'pytest-cov',
+  'pytest-benchmark[histogram]',
+  'requests',
+]
+dev = [
+    'mypy',
+    'ruff',
+]
+
+[project.scripts]
+armonik = "armonik_cli.cli:cli"
