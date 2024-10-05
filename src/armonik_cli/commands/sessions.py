@@ -1,13 +1,15 @@
-import json
-
 import grpc
 import rich_click as click
 
-from armonik.client.sessions import ArmoniKSessions
-from armonik.common import SessionStatus
-from rich.table import Table
 
-from armonik_cli import console, utils
+from armonik.client.sessions import ArmoniKSessions
+from armonik.common import SessionStatus, Session
+
+from armonik_cli import console, errors
+from armonik_cli.commands.common import endpoint_option, output_option, debug_option
+
+
+SESSION_TABLE_COLS = [("ID", "SessionId"), ("Status", "Status"), ("CreatedAt", "CreatedAt")]
 
 
 @click.group(name="sessions")
@@ -17,45 +19,40 @@ def sessions():
 
 
 @sessions.command()
-@click.option(
-    "-e",
-    "--endpoint",
-    type=str,
-    required=True,
-    help="Endpoint of the cluster to connect to.",
-    metavar="ENDPOINT",
-)
-@click.option(
-    "-o",
-    "--output",
-    type=click.Choice(["fancy", "json"], case_sensitive=False),
-    default="fancy",
-    show_default=True,
-    help="Endpoint of the cluster to connect to.",
-    metavar="FORMAT",
-)
-def list(endpoint: str, output: str):
+@endpoint_option
+@output_option
+@debug_option
+@errors.error_handler
+def list(endpoint: str, output: str, debug: bool):
     """List the sessions of an ArmoniK cluster."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
         total, sessions = sessions_client.list_sessions()
 
     if total > 0:
-        for session in sessions:
-            session.status = (
-                SessionStatus.name_from_value(session.status).split("_")[-1].capitalize()
-            )
-        if output == "fancy":
-            table = Table(box=None)
-            table.add_column("ID")
-            table.add_column("Status")
-            table.add_column("Duration")
-
-            for session in sessions:
-                table.add_row(session.session_id, str(session.status), str(session.duration))
-
-            console.get_console().print(table)
-        else:
-            console.get_console().print_json(json.dumps(sessions, cls=utils.CLIJSONEncoder))
+        sessions = [_clean_up_status(s) for s in sessions]
+        console.get_console().formatted_print(
+            sessions, format=output, table_cols=SESSION_TABLE_COLS
+        )
 
     console.get_console().print(f"\n{total} sessions found.")
+
+
+@sessions.command()
+@endpoint_option
+@output_option
+@debug_option
+@click.argument("session-id", required=True, type=str, metavar="SESSION_ID")
+@errors.error_handler
+def get(endpoint: str, output: str, session_id: str, debug: bool):
+    """Get details of a given session."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.get_session(session_id=session_id)
+        session = _clean_up_status(session)
+        console.get_console().formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+def _clean_up_status(session: Session) -> Session:
+    session.status = SessionStatus.name_from_value(session.status).split("_")[-1].capitalize()
+    return session
