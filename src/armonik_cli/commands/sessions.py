@@ -1,10 +1,13 @@
+import json
+
 import grpc
 import rich_click as click
 
 from armonik.client.sessions import ArmoniKSessions
+from armonik.common import SessionStatus
 from rich.table import Table
 
-from armonik_cli import console
+from armonik_cli import console, utils
 
 
 @click.group(name="sessions")
@@ -38,6 +41,10 @@ def list(endpoint: str, output: str):
         total, sessions = sessions_client.list_sessions()
 
     if total > 0:
+        for session in sessions:
+            session.status = (
+                SessionStatus.name_from_value(session.status).split("_")[-1].capitalize()
+            )
         if output == "fancy":
             table = Table(box=None)
             table.add_column("ID")
@@ -49,7 +56,6 @@ def list(endpoint: str, output: str):
 
             console.get_console().print(table)
         else:
-            sessions = [s.__dict__ for s in sessions]
-            console.get_console().print(sessions)
+            console.get_console().print_json(json.dumps(sessions, cls=utils.CLIJSONEncoder))
 
     console.get_console().print(f"\n{total} sessions found.")
