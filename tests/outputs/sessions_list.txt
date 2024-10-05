@@ -1,0 +1,18 @@
+[
+    {
+        '_session_id': 'id',
+        '_status': 0,
+        '_client_submission': None,
+        '_worker_submission': None,
+        '_partition_ids': [],
+        '_options': None,
+        '_created_at': None,
+        '_cancelled_at': None,
+        '_closed_at': None,
+        '_purged_at': None,
+        '_deleted_at': None,
+        '_duration': None
+    }
+]
+
+1 sessions found.
