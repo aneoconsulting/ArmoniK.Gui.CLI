@@ -10,7 +10,7 @@ from armonik_cli.utils import CLIJSONEncoder
 
 
 class ArmoniKCLIConsole(Console):
-    def formatted_print(self, obj: object, format: str, table_cols: List[Tuple[str, str]]):
+    def formatted_print(self, obj: object, format: str, table_cols: List[Tuple[str, str]] | None = None):
         obj = json.loads(json.dumps(obj, cls=CLIJSONEncoder))
 
         if format == "yaml":
