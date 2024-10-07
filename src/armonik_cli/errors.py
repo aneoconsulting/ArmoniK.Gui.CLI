@@ -40,7 +40,7 @@ def error_handler(func):
             if status_code == grpc.StatusCode.NOT_FOUND:
                 raise NotFoundError(error_details)
             else:
-                raise
+                raise InternalError("An internal fatal error occured.")
         except Exception:
             if "debug" in kwargs and kwargs["debug"]:
                 console.print_exception()

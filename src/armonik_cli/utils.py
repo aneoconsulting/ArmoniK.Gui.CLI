@@ -1,6 +1,7 @@
 import json
 
 from datetime import datetime, timedelta
+from typing import Dict, Union, Any
 
 from armonik.common import Session, TaskOptions
 from google._upb._message import ScalarMapContainer
@@ -17,7 +18,7 @@ class CLIJSONEncoder(json.JSONEncoder):
 
     __api_types = [Session, TaskOptions]
 
-    def default(self, obj):
+    def default(self, obj: object) -> Union[str, Dict[str, Any]]:
         """
         Override the `default` method to serialize non-serializable objects to JSON.
 
@@ -38,7 +39,7 @@ class CLIJSONEncoder(json.JSONEncoder):
         elif any([isinstance(obj, api_type) for api_type in self.__api_types]):
             return {self.camel_case(k): v for k, v in obj.__dict__.items()}
         else:
-            super().default(obj)
+            return super().default(obj)
 
     @staticmethod
     def camel_case(value: str) -> str:
