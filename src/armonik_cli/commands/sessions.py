@@ -19,6 +19,7 @@ from armonik_cli.commands.common import (
 
 
 SESSION_TABLE_COLS = [("ID", "SessionId"), ("Status", "Status"), ("CreatedAt", "CreatedAt")]
+session_argument = click.argument("session-id", required=True, type=str, metavar="SESSION_ID")
 
 
 @click.group(name="sessions")
@@ -170,6 +171,130 @@ def create(
         )
         session = sessions_client.get_session(session_id=session_id)
         session = _clean_up_status(session)
+        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+@sessions.command()
+@endpoint_option
+@click.confirmation_option("--confirm", prompt="Are you sure you want to cancel this session?")
+@output_option
+@debug_option
+@session_argument
+@error_handler
+def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+    """Cancel a session."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.cancel_session(session_id=session_id)
+        session = _clean_up_status(session)
+        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+@sessions.command()
+@endpoint_option
+@output_option
+@debug_option
+@session_argument
+@error_handler
+def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+    """Pause a session."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.pause_session(session_id=session_id)
+        session = _clean_up_status(session)
+        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+@sessions.command()
+@endpoint_option
+@output_option
+@debug_option
+@session_argument
+@error_handler
+def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+    """Resume a session."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.resume_session(session_id=session_id)
+        session = _clean_up_status(session)
+        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+@sessions.command()
+@endpoint_option
+@click.confirmation_option("--confirm", prompt="Are you sure you want to close this session?")
+@output_option
+@debug_option
+@session_argument
+@error_handler
+def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+    """Close a session."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.close_session(session_id=session_id)
+        session = _clean_up_status(session)
+        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+@sessions.command()
+@endpoint_option
+@click.confirmation_option("--confirm", prompt="Are you sure you want to purge this session?")
+@output_option
+@debug_option
+@session_argument
+@error_handler
+def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+    """Purge a session."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.purge_session(session_id=session_id)
+        session = _clean_up_status(session)
+        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+@sessions.command()
+@endpoint_option
+@click.confirmation_option("--confirm", prompt="Are you sure you want to delete this session?")
+@output_option
+@debug_option
+@session_argument
+@error_handler
+def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+    """Delete a session and associated data from the cluster."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.delete_session(session_id=session_id)
+        session = _clean_up_status(session)
+        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+
+
+@sessions.command()
+@endpoint_option
+@session_argument
+@click.option(
+    "--clients-only",
+    is_flag=True,
+    default=False,
+    help="Prevent only clients from submitting new tasks in the session.",
+)
+@click.option(
+    "--workers-only",
+    is_flag=True,
+    default=False,
+    help="Prevent only workers from submitting new tasks in the session.",
+)
+@output_option
+@debug_option
+@error_handler
+def stop_submission(
+    endpoint: str, session_id: str, clients_only: bool, workers_only: bool, output: str, debug: bool
+) -> None:
+    """Stop clients and/or workers from submitting new tasks in a session."""
+    with grpc.insecure_channel(endpoint) as channel:
+        sessions_client = ArmoniKSessions(channel)
+        session = sessions_client.stop_submission_session(
+            session_id=session_id, client=clients_only, worker=workers_only
+        )
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
