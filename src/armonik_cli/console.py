@@ -19,7 +19,9 @@ class ArmoniKCLIConsole(Console):
             obj = yaml.dump(obj, sort_keys=False, indent=2)
         elif format == "table":
             if not table_cols:
-                raise ValueError("Missing 'table_cols' when calling 'formatted_print' with format table.")
+                raise ValueError(
+                    "Missing 'table_cols' when calling 'formatted_print' with format table."
+                )
             obj = self._build_table(obj, table_cols)
         else:
             obj = json.dumps(obj, sort_keys=False, indent=2)

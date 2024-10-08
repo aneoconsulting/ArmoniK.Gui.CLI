@@ -17,11 +17,9 @@ class DummyRpcError(RpcError):
         return self._details
 
 
-@pytest.mark.parametrize(("exception", "code"),
-    [
-        (NotFoundError, StatusCode.NOT_FOUND),
-        (InternalError, StatusCode.UNAVAILABLE)
-    ]
+@pytest.mark.parametrize(
+    ("exception", "code"),
+    [(NotFoundError, StatusCode.NOT_FOUND), (InternalError, StatusCode.UNAVAILABLE)],
 )
 def test_error_handler_rpc_error(exception, code):
     @error_handler
