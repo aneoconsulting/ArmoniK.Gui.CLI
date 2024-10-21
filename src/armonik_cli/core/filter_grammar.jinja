@@ -1,0 +1,47 @@
+?start: expr
+
+expr: term ("or" term)*
+
+term: factor ("and" factor)*
+
+factor: "(" expr ")"
+    {% for field, field_comp, field_type in fields %}
+       | "{{ field }}" {{ field_comp }} {{ field_type }} -> {{ field }}
+    {% endfor %}
+
+// Fields comparators
+?generic_comp: EQ | NEQ | GT | GTE | LT | LTE
+?string_comp: EQ | NEQ | IN | NOTIN | STARTSWITH | ENDSWIDTH
+?status_comp: EQ | NEQ
+?bool_comp: EQ
+
+EQ: "="
+NEQ: "!="
+LT: "<"
+LTE: "<="
+GT: ">"
+GTE: ">="
+IN: "contains"
+NOTIN: "notcontains"
+STARTSWITH: "startswith"
+ENDSWIDTH: "endswith"
+
+// Fields types
+// Define a date terminal (YYYY-MM-DD format)
+DATETIME: /\d{4}-\d{2}-\d{2}(?:T\d{1,2}:\d{2}:\d{2}(?:\.\d{1,3})?)?/
+
+// Define a duration terminal (HH:MM:SS.MS where MS is optional)
+DURATION: /\d{1,2}:\d{2}:\d{2}(?:\.\d{1,3})?/
+
+// Define a boolean terminal
+BOOL: "true" | "false"
+
+// Define a status terminal
+STATUS: {% for s in status[:-1] %} "{{ s }}" | {% endfor %} "{{ status[-1] }}"
+
+// Define a string terminal
+STRING: /[a-zA-Z0-9-]+/
+
+%import common.SIGNED_INT
+%import common.WS
+%ignore WS

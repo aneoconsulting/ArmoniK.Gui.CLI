@@ -5,6 +5,12 @@ import rich_click as click
 from datetime import timedelta
 from typing import cast, Tuple, Union
 
+from armonik.common import Filter
+from lark.exceptions import UnexpectedInput
+
+from armonik_cli.utils import parse_time_delta
+from armonik_cli.core.filters import FilterParser
+
 
 class KeyValuePairParam(click.ParamType):
     """
@@ -72,30 +78,53 @@ class TimeDeltaParam(click.ParamType):
             click.BadParameter: If the input does not match the expected time format.
         """
         try:
-            return self._parse_time_delta(value)
+            return parse_time_delta(value)
         except ValueError:
             self.fail(f"{value} is not a valid time delta. Use HH:MM:SS.MS.", param, ctx)
 
-    @staticmethod
-    def _parse_time_delta(time_str: str) -> timedelta:
+
+class FilterParam(click.ParamType):
+    """
+    A custom Click parameter type that parses a string expression into a valid ArmoniK API filter.
+
+    Attributes:
+        name: The name of the parameter type, used by Click.
+    """
+
+    name = "filter"
+
+    def __init__(self, filter_type: str) -> None:
+        super().__init__()
+        try:
+            filter_type = filter_type.capitalize()
+            from armonik import common
+
+            self.parser = FilterParser(
+                obj=getattr(common, filter_type),
+                filter=getattr(common.filter, f"{filter_type}Filter"),
+                status_enum=getattr(common, f"{filter_type}Status"),
+            )
+        except AttributeError:
+            raise ValueError(f"'{filter_type}' is not a valid filter type.")
+
+    def convert(
+        self, value: str, param: Union[click.Parameter, None], ctx: Union[click.Context, None]
+    ) -> Filter:
         """
-        Parses a time string in the format "HH:MM:SS.MS" into a datetime.timedelta object.
+        Converts the input value into a valid ArmoniK API filter.
 
         Args:
-            time_str (str): A string representing a time duration in hours, minutes,
-                            seconds, and milliseconds (e.g., "12:34:56.789").
+            value: The input value to be converted.
+            param: The parameter object passed by Click.
+            ctx: The context in which the parameter is being used.
 
         Returns:
-            timedelta: A datetime.timedelta object representing the parsed time duration.
+            A filter object.
 
         Raises:
-            ValueError: If the input string is not in the correct format.
+            click.BadParameter: If the input contains a syntax error.
         """
-        hours, minutes, seconds = time_str.split(":")
-        sec, microseconds = (seconds.split(".") + ["0"])[:2]  # Handle missing milliseconds
-        return timedelta(
-            hours=int(hours),
-            minutes=int(minutes),
-            seconds=int(sec),
-            milliseconds=int(microseconds.ljust(3, "0")),  # Ensure 3 digits for milliseconds
-        )
+        try:
+            return self.parser.parse(value)
+        except UnexpectedInput as error:
+            self.fail(f"Filter syntax error: {error.get_context(value, span=40)}", param, ctx)
