@@ -6,8 +6,9 @@ from typing import List, Tuple, Union
 
 from armonik.client.sessions import ArmoniKSessions
 from armonik.common import SessionStatus, Session, TaskOptions
+from armonik.common.filter import SessionFilter
 
-from armonik_cli.core import console, base_command, KeyValuePairParam, TimeDeltaParam
+from armonik_cli.core import console, base_command, KeyValuePairParam, TimeDeltaParam, FilterParam
 
 
 SESSION_TABLE_COLS = [("ID", "SessionId"), ("Status", "Status"), ("CreatedAt", "CreatedAt")]
@@ -21,12 +22,20 @@ def sessions() -> None:
 
 
 @sessions.command()
+@click.option(
+    "-f",
+    "--filter",
+    type=FilterParam("Session"),
+    required=False,
+    help="An expression to filter the sessions to be listed.",
+    metavar="FILTER EXPR",
+)
 @base_command
-def list(endpoint: str, output: str, debug: bool) -> None:
+def list(endpoint: str, output: str, filter: Union[SessionFilter, None], debug: bool) -> None:
     """List the sessions of an ArmoniK cluster."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
-        total, sessions = sessions_client.list_sessions()
+        total, sessions = sessions_client.list_sessions(session_filter=filter)
 
     if total > 0:
         sessions = [_clean_up_status(s) for s in sessions]

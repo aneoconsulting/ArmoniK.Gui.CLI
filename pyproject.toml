@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
     "armonik",
     "click",
+    "lark",
     "PyYAML",
     "rich_click",
 ]
