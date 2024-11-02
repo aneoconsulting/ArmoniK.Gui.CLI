@@ -1,18 +1,64 @@
+import logging
 import re
 
 import rich_click as click
 
 from datetime import timedelta
+from functools import wraps, partial
+from pathlib import Path
 from typing import cast, Tuple, Union
+
+from armonik.common.channel import create_channel
+
+from armonik_cli.errors import error_handler
+from armonik_cli.utils import get_logger, reconcile_connection_details
 
 
 endpoint_option = click.option(
     "-e",
     "--endpoint",
     type=str,
-    required=True,
+    required=False,
     help="Endpoint of the cluster to connect to.",
+    envvar="ARMONIK__ENDPOINT",
     metavar="ENDPOINT",
+)
+ca_option = click.option(
+    "--ca",
+    "--certificate-authority",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+    required=False,
+    help="Path to the certificate authority to read.",
+    envvar="ARMONIK__CA",
+    metavar="CA_PATH",
+)
+cert_option = click.option(
+    "--cert",
+    "--client-certificate",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+    required=False,
+    help="Path to the client certificate to read.",
+    envvar="ARMONIK__CERT",
+    metavar="CERT_PATH",
+)
+key_option = click.option(
+    "--key",
+    "--client-key",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+    required=False,
+    help="Path to the client key to read.",
+    envvar="ARMONIK__KEY",
+    metavar="KEY_PATH",
+)
+config_option = click.option(
+    "-c",
+    "--config",
+    "optional_config_file",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+    required=False,
+    help="Path to a third-party configuration file.",
+    envvar="ARMONIK__CONFIG",
+    metavar="CONFIG_PATH",
 )
 output_option = click.option(
     "-o",
@@ -121,3 +167,44 @@ class TimeDeltaParam(click.ParamType):
             seconds=int(sec),
             milliseconds=int(microseconds.ljust(3, "0")),  # Ensure 3 digits for milliseconds
         )
+
+
+def base_command(func):
+    if not func:
+        return partial(base_command)
+
+    @endpoint_option
+    @ca_option
+    @cert_option
+    @key_option
+    @config_option
+    @output_option
+    @debug_option
+    @wraps(func)
+    @error_handler
+    def wrapper(
+        endpoint: str,
+        ca: Union[str, None],
+        cert: Union[str, None],
+        key: Union[str, None],
+        optional_config_file: Union[str, None],
+        output: str,
+        debug: bool,
+        *args,
+        **kwargs,
+    ):
+        logger = get_logger(debug)
+        config = reconcile_connection_details(
+            {
+                "endpoint": endpoint,
+                "certificate_authority": ca,
+                "client_certificate": cert,
+                "client_key": key,
+            },
+            optional_config_file,
+            logger,
+        )
+        channel_ctx = create_channel(config.pop("endpoint"), **config)
+        return func(channel_ctx, logger, output, *args, **kwargs)
+
+    return wrapper

@@ -21,7 +21,7 @@ class NotFoundError(ArmoniKCLIError):
     """Error raised when a given object of the API is not found."""
 
 
-def error_handler(func):
+def error_handler(func=None):
     """A decorator to manage the correct display of errors.."""
     # Allow to call the decorator with parenthesis.
     if not func:

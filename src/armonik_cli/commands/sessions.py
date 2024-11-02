@@ -1,4 +1,5 @@
-import grpc
+import logging
+
 import rich_click as click
 
 from datetime import timedelta
@@ -6,13 +7,12 @@ from typing import List, Tuple, Union
 
 from armonik.client.sessions import ArmoniKSessions
 from armonik.common import SessionStatus, Session, TaskOptions
+from armonik.common.channel import create_channel
+from grpc import Channel
 
 from armonik_cli.console import console
-from armonik_cli.errors import error_handler
 from armonik_cli.commands.common import (
-    endpoint_option,
-    output_option,
-    debug_option,
+    base_command,
     KeyValuePairParam,
     TimeDeltaParam,
 )
@@ -29,32 +29,26 @@ def sessions() -> None:
 
 
 @sessions.command()
-@endpoint_option
-@output_option
-@debug_option
-@error_handler
-def list(endpoint: str, output: str, debug: bool) -> None:
+@base_command
+def list(channel_ctx: Channel, logger: logging.Logger, output: str) -> None:
+    # def list(endpoint: str, ca: Union[Path, None], cert: Union[Path, None], key: Union[Path, None], other_config_path: Union[Path, None], output: str, debug: bool) -> None:
     """List the sessions of an ArmoniK cluster."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         total, sessions = sessions_client.list_sessions()
 
-    if total > 0:
-        sessions = [_clean_up_status(s) for s in sessions]
-        console.formatted_print(sessions, format=output, table_cols=SESSION_TABLE_COLS)
+    logger.info(f"{total} sessions found.")
 
-    console.print(f"\n{total} sessions found.")
+    sessions = [_clean_up_status(s) for s in sessions]
+    console.formatted_print(sessions, format=output, table_cols=SESSION_TABLE_COLS)
 
 
 @sessions.command()
-@endpoint_option
-@output_option
-@debug_option
 @session_argument
-@error_handler
-def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+@base_command
+def get(channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str) -> None:
     """Get details of a given session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.get_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -62,7 +56,6 @@ def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 
 
 @sessions.command()
-@endpoint_option
 @click.option(
     "--max-retries",
     type=int,
@@ -130,11 +123,9 @@ def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     help="Additional default options.",
     metavar="KEY=VALUE",
 )
-@output_option
-@debug_option
-@error_handler
+@base_command
 def create(
-    endpoint: str,
+    channel_ctx: Channel, logger: logging.Logger, output: str,
     max_retries: int,
     max_duration: timedelta,
     priority: int,
@@ -146,11 +137,9 @@ def create(
     application_service: Union[str, None],
     engine_type: Union[str, None],
     option: Union[List[Tuple[str, str]], None],
-    output: str,
-    debug: bool,
 ) -> None:
     """Create a new session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session_id = sessions_client.create_session(
             default_task_options=TaskOptions(
@@ -173,15 +162,12 @@ def create(
 
 
 @sessions.command()
-@endpoint_option
 @click.confirmation_option("--confirm", prompt="Are you sure you want to cancel this session?")
-@output_option
-@debug_option
 @session_argument
-@error_handler
-def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+@base_command
+def cancel(channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str) -> None:
     """Cancel a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.cancel_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -189,14 +175,11 @@ def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 
 
 @sessions.command()
-@endpoint_option
-@output_option
-@debug_option
 @session_argument
-@error_handler
-def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+@base_command
+def pause(channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str) -> None:
     """Pause a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.pause_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -204,14 +187,11 @@ def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 
 
 @sessions.command()
-@endpoint_option
-@output_option
-@debug_option
 @session_argument
-@error_handler
-def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+@base_command
+def resume(channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str) -> None:
     """Resume a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.resume_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -219,15 +199,12 @@ def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 
 
 @sessions.command()
-@endpoint_option
 @click.confirmation_option("--confirm", prompt="Are you sure you want to close this session?")
-@output_option
-@debug_option
 @session_argument
-@error_handler
-def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+@base_command
+def close(channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str) -> None:
     """Close a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.close_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -235,15 +212,12 @@ def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 
 
 @sessions.command()
-@endpoint_option
 @click.confirmation_option("--confirm", prompt="Are you sure you want to purge this session?")
-@output_option
-@debug_option
 @session_argument
-@error_handler
-def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+@base_command
+def purge(channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str) -> None:
     """Purge a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.purge_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -251,15 +225,12 @@ def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 
 
 @sessions.command()
-@endpoint_option
 @click.confirmation_option("--confirm", prompt="Are you sure you want to delete this session?")
-@output_option
-@debug_option
 @session_argument
-@error_handler
-def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+@base_command
+def delete(channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str) -> None:
     """Delete a session and associated data from the cluster."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.delete_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -267,8 +238,6 @@ def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 
 
 @sessions.command()
-@endpoint_option
-@session_argument
 @click.option(
     "--clients-only",
     is_flag=True,
@@ -281,14 +250,12 @@ def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     default=False,
     help="Prevent only workers from submitting new tasks in the session.",
 )
-@output_option
-@debug_option
-@error_handler
+@base_command
 def stop_submission(
-    endpoint: str, session_id: str, clients_only: bool, workers_only: bool, output: str, debug: bool
+    channel_ctx: Channel, logger: logging.Logger, output: str, session_id: str, clients_only: bool, workers_only: bool
 ) -> None:
     """Stop clients and/or workers from submitting new tasks in a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.stop_submission_session(
             session_id=session_id, client=clients_only, worker=workers_only
