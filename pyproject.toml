@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools",
+requires = ["setuptools>=64",
+            "setuptools-scm>=8",
             "wheel"]
 build-backend = "setuptools.build_meta"
 
@@ -36,7 +37,6 @@ dependencies = [
 
 [tool.setuptools]
 include-package-data = true
-dynamic = {version = {attr = "armonik_cli.__version__"}}
 
 [tool.setuptools.packages.find]
 where= ["src"]
@@ -58,3 +58,8 @@ dev = [
 
 [project.scripts]
 armonik = "armonik_cli.cli:cli"
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "no-local-version"
+version_file = "src/armonik_cli/_version.py"
