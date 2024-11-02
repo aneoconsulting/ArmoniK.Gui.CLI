@@ -13,7 +13,7 @@ class CLIJSONEncoder(json.JSONEncoder):
     JSONs.
 
     Attributes:
-        __api_types (list): The list of ArmoniK API Python objects managed by this encoder.
+        __api_types: The list of ArmoniK API Python objects managed by this encoder.
     """
 
     __api_types = [Session, TaskOptions]
@@ -23,10 +23,10 @@ class CLIJSONEncoder(json.JSONEncoder):
         Override the `default` method to serialize non-serializable objects to JSON.
 
         Args:
-            obj: The object to be serialized.
+            The object to be serialized.
 
         Returns:
-            str or dict: The object serialized.
+            The object serialized.
         """
         if isinstance(obj, timedelta):
             return str(obj)
@@ -47,9 +47,9 @@ class CLIJSONEncoder(json.JSONEncoder):
         Convert snake_case strings to CamelCase.
 
         Args:
-            value (str): The snake_case string to be converted.
+            value: The snake_case string to be converted.
 
         Returns:
-            str: The CamelCase equivalent of the input string.
+            The CamelCase equivalent of the input string.
         """
         return "".join(word.capitalize() for word in value.split("_"))

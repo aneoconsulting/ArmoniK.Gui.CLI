@@ -13,8 +13,8 @@ from armonik_cli.commands.common import (
     endpoint_option,
     output_option,
     debug_option,
-    KeyValuePairParamType,
-    TimeDeltaParamType,
+    KeyValuePairParam,
+    TimeDeltaParam,
 )
 
 
@@ -41,9 +41,7 @@ def list(endpoint: str, output: str, debug: bool) -> None:
 
     if total > 0:
         sessions = [_clean_up_status(s) for s in sessions]
-        console.formatted_print(
-            sessions, format=output, table_cols=SESSION_TABLE_COLS
-        )
+        console.formatted_print(sessions, format=output, table_cols=SESSION_TABLE_COLS)
 
     console.print(f"\n{total} sessions found.")
 
@@ -52,7 +50,7 @@ def list(endpoint: str, output: str, debug: bool) -> None:
 @endpoint_option
 @output_option
 @debug_option
-@click.argument("session-id", required=True, type=str, metavar="SESSION_ID")
+@session_argument
 @error_handler
 def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Get details of a given session."""
@@ -74,7 +72,7 @@ def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 )
 @click.option(
     "--max-duration",
-    type=TimeDeltaParamType(),
+    type=TimeDeltaParam(),
     required=True,
     help="Maximum default task execution time (format HH:MM:SS.MS).",
     metavar="DURATION",
@@ -126,7 +124,7 @@ def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 )
 @click.option(
     "--option",
-    type=KeyValuePairParamType(),
+    type=KeyValuePairParam(),
     required=False,
     multiple=True,
     help="Additional default options.",
