@@ -3,6 +3,8 @@ import re
 import rich_click as click
 
 from datetime import timedelta
+from typing import cast, Tuple, Union
+
 
 endpoint_option = click.option(
     "-e",
@@ -18,7 +20,7 @@ output_option = click.option(
     type=click.Choice(["yaml", "json", "table"], case_sensitive=False),
     default="json",
     show_default=True,
-    help="Endpoint of the cluster to connect to.",
+    help="Commands output format.",
     metavar="FORMAT",
 )
 debug_option = click.option(
@@ -26,14 +28,37 @@ debug_option = click.option(
 )
 
 
-class KeyValuePairParamType(click.ParamType):
+class KeyValuePairParam(click.ParamType):
+    """
+    A custom Click parameter type that parses a key-value pair in the format "key=value".
+
+    Attributes:
+        name (str): The name of the parameter type, used by Click.
+    """
+
     name = "key_value_pair"
 
-    def convert(self, value, param, ctx):
+    def convert(
+        self, value: str, param: Union[click.Parameter, None], ctx: Union[click.Context, None]
+    ) -> Tuple[str, str]:
+        """
+        Converts the input value into a tuple of (key, value) if it matches the required format.
+
+        Args:
+            value (str): The input value to be converted.
+            param (Union[click.Parameter, None]): The parameter object passed by Click.
+            ctx (Union[click.Parameter, None]): The context in which the parameter is being used.
+
+        Returns:
+            tuple: A tuple (key, value) if the input matches the format "key=value".
+
+        Raises:
+            click.BadParameter: If the input does not match the expected format.
+        """
         pattern = r"^([a-zA-Z0-9_-]+)=([a-zA-Z0-9_-]+)$"
         match_result = re.match(pattern, value)
         if match_result:
-            return match_result.groups()
+            return cast(Tuple[str, str], match_result.groups())
         self.fail(
             f"{value} is not a valid key value pair. Use key=value where both key and value contain only alphanumeric characters, dashes (-), and underscores (_).",
             param,
@@ -41,10 +66,33 @@ class KeyValuePairParamType(click.ParamType):
         )
 
 
-class TimeDeltaParamType(click.ParamType):
+class TimeDeltaParam(click.ParamType):
+    """
+    A custom Click parameter type that parses a time duration string in the format "HH:MM:SS.MS".
+
+    Attributes:
+        name (str): The name of the parameter type, used by Click.
+    """
+
     name = "timedelta"
 
-    def convert(self, value, param, ctx):
+    def convert(
+        self, value: str, param: Union[click.Parameter, None], ctx: Union[click.Context, None]
+    ) -> timedelta:
+        """
+        Converts the input value into a timedelta object if it matches the required time format.
+
+        Args:
+            value (str): The input value to be converted.
+            param (Union[click.Parameter, None]): The parameter object passed by Click.
+            ctx (Union[click.Parameter, None]): The context in which the parameter is being used.
+
+        Returns:
+            timedelta: A timedelta object representing the parsed time duration.
+
+        Raises:
+            click.BadParameter: If the input does not match the expected time format.
+        """
         try:
             return self._parse_time_delta(value)
         except ValueError:
