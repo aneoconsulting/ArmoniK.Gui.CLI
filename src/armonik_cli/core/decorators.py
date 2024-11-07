@@ -3,25 +3,11 @@ from functools import wraps, partial
 import grpc
 import rich_click as click
 
-from armonik_cli.console import console
+from armonik_cli.core.console import console
+from armonik_cli.exceptions import NotFoundError, InternalError
 
 
-class ArmoniKCLIError(click.ClickException):
-    """Base exception for ArmoniK CLI errors."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-
-
-class InternalError(ArmoniKCLIError):
-    """Error raised when an unknown internal error occured."""
-
-
-class NotFoundError(ArmoniKCLIError):
-    """Error raised when a given object of the API is not found."""
-
-
-def error_handler(func):
+def error_handler(func=None):
     """A decorator to manage the correct display of errors.."""
     # Allow to call the decorator with parenthesis.
     if not func:

@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Any, Union, cast
 from rich.console import Console
 from rich.table import Table
 
-from armonik_cli.utils import CLIJSONEncoder
+from armonik_cli.core.serialize import CLIJSONEncoder
 
 
 class ArmoniKCLIConsole(Console):
