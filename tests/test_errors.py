@@ -2,7 +2,8 @@ import pytest
 
 from grpc import RpcError, StatusCode
 
-from armonik_cli.errors import error_handler, NotFoundError, InternalError
+from armonik_cli.core import error_handler
+from armonik_cli.exceptions import NotFoundError, InternalError
 
 
 class DummyRpcError(RpcError):

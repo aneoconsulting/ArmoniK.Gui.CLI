@@ -7,14 +7,11 @@ from typing import List, Tuple, Union
 from armonik.client.sessions import ArmoniKSessions
 from armonik.common import SessionStatus, Session, TaskOptions
 
-from armonik_cli.console import console
-from armonik_cli.errors import error_handler
+from armonik_cli.core import console, error_handler, KeyValuePairParam, TimeDeltaParam
 from armonik_cli.commands.common import (
     endpoint_option,
     output_option,
     debug_option,
-    KeyValuePairParam,
-    TimeDeltaParam,
 )
 
 
@@ -22,7 +19,7 @@ SESSION_TABLE_COLS = [("ID", "SessionId"), ("Status", "Status"), ("CreatedAt", "
 session_argument = click.argument("session-id", required=True, type=str, metavar="SESSION_ID")
 
 
-@click.group(name="sessions")
+@click.group(name="session")
 def sessions() -> None:
     """Manage cluster sessions."""
     pass
