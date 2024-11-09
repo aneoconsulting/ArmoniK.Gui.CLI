@@ -9,7 +9,7 @@ from armonik_cli.exceptions import NotFoundError, InternalError
 
 def error_handler(func=None):
     """Decorator to ensure correct display of errors.
-    
+
     Args:
         func: The command function to be decorated. If None, a partial function is returned,
             allowing the decorator to be used with parentheses.
@@ -46,7 +46,7 @@ def error_handler(func=None):
 
 def base_command(func=None):
     """Decorator to add common CLI options to a Click command function, including
-    'endpoint', 'output', and 'debug'. These options are automatically passed 
+    'endpoint', 'output', and 'debug'. These options are automatically passed
     as arguments to the decorated function.
 
     The following options are added to the command:
@@ -55,7 +55,7 @@ def base_command(func=None):
     - `--debug`: Enables debug mode, printing additional logs if set.
 
     Warning:
-        If the decorated function has parameters with the same names as the options added by 
+        If the decorated function has parameters with the same names as the options added by
         this decorator, this can lead to conflicts and unpredictable behavior.
 
     Args:

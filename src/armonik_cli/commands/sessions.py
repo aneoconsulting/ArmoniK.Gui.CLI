@@ -32,7 +32,8 @@ def list(endpoint: str, output: str, debug: bool) -> None:
         sessions = [_clean_up_status(s) for s in sessions]
         console.formatted_print(sessions, format=output, table_cols=SESSION_TABLE_COLS)
 
-    console.print(f"\n{total} sessions found.")
+    # TODO: Use logger to display this information
+    # console.print(f"\n{total} sessions found.")
 
 
 @sessions.command()
@@ -255,7 +256,9 @@ def stop_submission(
         session = sessions_client.stop_submission_session(
             session_id=session_id, client=clients_only, worker=workers_only
         )
-        console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
+        console.formatted_print(
+            _clean_up_status(session), format=output, table_cols=SESSION_TABLE_COLS
+        )
 
 
 def _clean_up_status(session: Session) -> Session:
