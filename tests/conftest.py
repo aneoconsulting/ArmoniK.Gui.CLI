@@ -1,15 +1,30 @@
-import pytest
+import json
 
-from pathlib import Path
+from typing import Dict, Optional
+
+from click.testing import CliRunner, Result
+
+from armonik_cli.cli import cli
 
 
-@pytest.fixture
-def cmd_outputs():
-    """Read command output files located in tests/outputs and return a dictionnary which keys are
-    file names and values file contents."""
-    output_files = [
-        d
-        for d in (Path(__file__).parent / "outputs").iterdir()
-        if d.is_file() and d.suffix == ".txt"
-    ]
-    return {f.name.removesuffix(".txt"): f.open("r").read() for f in output_files}
+def run_cmd_and_assert_exit_code(
+    cmd: str, exit_code: int = 0, input: Optional[str] = None, env: Optional[Dict[str, str]] = None
+) -> Result:
+    cmd = cmd.split()
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = runner.invoke(cli, cmd, input=input, env=env)
+    assert result.exit_code == exit_code
+    return result
+
+
+def reformat_cmd_output(
+    output: str, deserialize: bool = False, first_line_out: bool = False
+) -> str:
+    if first_line_out:
+        output = "\n".join(output.split("\n")[1:])
+    output = output.replace("\n", "")
+    output = " ".join(output.split())
+    if deserialize:
+        return json.loads(output)
+    return output
