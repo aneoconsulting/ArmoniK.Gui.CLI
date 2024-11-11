@@ -44,7 +44,7 @@ def error_handler(func=None):
     return wrapper
 
 
-def base_command(func=None):
+def base_command(_func=None, *, connection_args: bool = True):
     """Decorator to add common CLI options to a Click command function, including
     'endpoint', 'output', and 'debug'. These options are automatically passed
     as arguments to the decorated function.
@@ -66,37 +66,39 @@ def base_command(func=None):
         The wrapped function with added CLI options.
     """
 
-    # Allow to call the decorator with parenthesis.
-    if not func:
-        return partial(base_command)
+    def decorator(func):
+        # Define the wrapper function with added Click options
+        endpoint_option = click.option(
+            "-e",
+            "--endpoint",
+            type=str,
+            required=True,
+            help="Endpoint of the cluster to connect to.",
+            metavar="ENDPOINT",
+        )
 
-    # Define the wrapper function with added Click options
-    @click.option(
-        "-e",
-        "--endpoint",
-        type=str,
-        required=True,
-        help="Endpoint of the cluster to connect to.",
-        metavar="ENDPOINT",
-    )
-    @click.option(
-        "-o",
-        "--output",
-        type=click.Choice(["yaml", "json", "table"], case_sensitive=False),
-        default="json",
-        show_default=True,
-        help="Commands output format.",
-        metavar="FORMAT",
-    )
-    @click.option(
-        "--debug", is_flag=True, default=False, help="Print debug logs and internal errors."
-    )
-    @error_handler
-    @wraps(func)
-    def wrapper(endpoint: str, output: str, debug: bool, *args, **kwargs):
-        kwargs["endpoint"] = endpoint
-        kwargs["output"] = output
-        kwargs["debug"] = debug
-        return func(*args, **kwargs)
+        if connection_args:
+            func = endpoint_option(func)
 
-    return wrapper
+        @click.option(
+            "-o",
+            "--output",
+            type=click.Choice(["yaml", "json", "table"], case_sensitive=False),
+            default="json",
+            show_default=True,
+            help="Commands output format.",
+            metavar="FORMAT",
+        )
+        @click.option(
+            "--debug", is_flag=True, default=False, help="Print debug logs and internal errors."
+        )
+        @error_handler
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    if _func is None:
+        return decorator
+    return decorator(_func)
