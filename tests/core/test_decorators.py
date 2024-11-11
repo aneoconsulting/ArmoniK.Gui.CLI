@@ -50,14 +50,20 @@ def test_error_handler_other_debug(decorator):
     raise_error(debug=True)
 
 
-@pytest.mark.parametrize("decorator", [base_command, base_command()])
-def test_base_command(decorator):
+@pytest.mark.parametrize(
+    ("decorator", "connection_args"),
+    [(base_command, True), (base_command(), True), (base_command(connection_args=False), False)],
+)
+def test_base_command(decorator, connection_args):
     @decorator
     def test_func():
         pass
 
     assert test_func.__name__ == "test_func"
-    assert len(test_func.__click_params__) == 3
-    assert test_func.__click_params__[0].name == "debug"
-    assert test_func.__click_params__[1].name == "output"
-    assert test_func.__click_params__[2].name == "endpoint"
+    assert len(test_func.__click_params__) == 3 if connection_args else 2
+    assert (
+        sorted([param.name for param in test_func.__click_params__])
+        == ["debug", "endpoint", "output"]
+        if connection_args
+        else ["debug", "output"]
+    )
