@@ -16,7 +16,7 @@ session_argument = click.argument("session-id", required=True, type=str, metavar
 
 
 @click.group(name="session")
-def sessions() -> None:
+def session() -> None:
     """Manage cluster sessions."""
     pass
 
@@ -45,7 +45,7 @@ def list(endpoint: str, output: str, filter: Union[SessionFilter, None], debug: 
     # console.print(f"\n{total} sessions found.")
 
 
-@sessions.command()
+@session.command()
 @session_argument
 @base_command
 def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
@@ -57,7 +57,7 @@ def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @click.option(
     "--max-retries",
     type=int,
@@ -165,7 +165,7 @@ def create(
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @click.confirmation_option("--confirm", prompt="Are you sure you want to cancel this session?")
 @session_argument
 @base_command
@@ -178,7 +178,7 @@ def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @session_argument
 @base_command
 def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
@@ -190,7 +190,7 @@ def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @session_argument
 @base_command
 def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
@@ -202,7 +202,7 @@ def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @click.confirmation_option("--confirm", prompt="Are you sure you want to close this session?")
 @session_argument
 @base_command
@@ -215,7 +215,7 @@ def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @click.confirmation_option("--confirm", prompt="Are you sure you want to purge this session?")
 @session_argument
 @base_command
@@ -228,7 +228,7 @@ def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @click.confirmation_option("--confirm", prompt="Are you sure you want to delete this session?")
 @session_argument
 @base_command
@@ -241,7 +241,7 @@ def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@session.command()
 @click.option(
     "--clients-only",
     is_flag=True,
