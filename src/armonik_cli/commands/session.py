@@ -4,8 +4,8 @@ import rich_click as click
 from datetime import timedelta
 from typing import List, Tuple, Union
 
-from armonik.client.sessions import ArmoniKSessions
-from armonik.common import SessionStatus, Session, TaskOptions
+from armonik.client import ArmoniKSessions, ArmoniKTasks
+from armonik.common import SessionStatus, Session, TaskOptions, Task, TaskStatus, Direction
 
 from armonik_cli.core import console, base_command, KeyValuePairParam, TimeDeltaParam
 
@@ -37,14 +37,23 @@ def list(endpoint: str, output: str, debug: bool) -> None:
 
 
 @session.command()
+@click.option("-s", "--stats", is_flag=True, help="Compute a set of statistics for the session.")
 @session_argument
 @base_command
-def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def get(endpoint: str, output: str, session_id: str, stats: bool, debug: bool) -> None:
     """Get details of a given session."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.get_session(session_id=session_id)
         session = _clean_up_status(session)
+        if stats:
+            throughput, elapsed_time = _get_session_throughput(channel, session_id)
+            task_status = _get_session_task_status(channel, session_id)
+            session.statistics = {
+                "Throughput": {"Description": "Task throughput from creation date of first task to date of last completed task.", "value": throughput, "Unit": "tasks/seconds"},
+                "ElapsedTime": {"Description": "Time elapsed between the creation date of the first task and the date of the last completed task.", "value": elapsed_time, "Unit": "seconds"},
+                "TaskStatus": {"Description": "Session task status.", "Value": task_status, "Unit": ""},
+            }
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
@@ -264,3 +273,19 @@ def stop_submission(
 def _clean_up_status(session: Session) -> Session:
     session.status = SessionStatus.name_from_value(session.status).split("_")[-1].capitalize()
     return session
+
+def _get_session_throughput(channel: grpc.Channel, session_id: str) -> Tuple[float, float]:
+    client = ArmoniKTasks(channel)
+    total, first = client.list_tasks(task_filter=Task.session_id == session_id, page_size=1, sort_field=Task.created_at, sort_direction=Direction.ASC)
+    _, last = client.list_tasks(task_filter=Task.session_id == session_id, page_size=1, sort_field=Task.ended_at, sort_direction=Direction.DESC)
+    if total == 0 or not first or not last:
+        return 0., 0.
+    elapsed_time = (last[0].ended_at - first[0].created_at).total_seconds()
+    throughput = total / elapsed_time
+    return throughput, elapsed_time
+
+
+def _get_session_task_status(channel: grpc.Channel, session_id: str) -> Tuple[str, int]:
+    client = ArmoniKTasks(channel)
+    task_status = client.count_tasks_by_status(task_filter=Task.session_id == session_id)
+    return {k.name.capitalize(): v for k, v in task_status.items()}
