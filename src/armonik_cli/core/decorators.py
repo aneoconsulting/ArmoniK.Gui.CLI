@@ -3,6 +3,8 @@ from functools import wraps, partial
 import grpc
 import rich_click as click
 
+from armonik.common.channel import create_channel
+
 from armonik_cli.core.console import console
 from armonik_cli.exceptions import NotFoundError, InternalError
 
@@ -72,13 +74,55 @@ def base_command(_func=None, *, connection_args: bool = True):
             "-e",
             "--endpoint",
             type=str,
-            required=True,
+            required=False,
             help="Endpoint of the cluster to connect to.",
+            envvar="ARMONIK__ENDPOINT",
             metavar="ENDPOINT",
+        )
+        ca_option = click.option(
+            "--ca",
+            "--certificate-authority",
+            type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+            required=False,
+            help="Path to the certificate authority to read.",
+            envvar="ARMONIK__CA",
+            metavar="CA_PATH",
+        )
+        cert_option = click.option(
+            "--cert",
+            "--client-certificate",
+            type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+            required=False,
+            help="Path to the client certificate to read.",
+            envvar="ARMONIK__CERT",
+            metavar="CERT_PATH",
+        )
+        key_option = click.option(
+            "--key",
+            "--client-key",
+            type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+            required=False,
+            help="Path to the client key to read.",
+            envvar="ARMONIK__KEY",
+            metavar="KEY_PATH",
+        )
+        config_option = click.option(
+            "-c",
+            "--config",
+            "optional_config_file",
+            type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True),
+            required=False,
+            help="Path to a third-party configuration file.",
+            envvar="ARMONIK__CONFIG",
+            metavar="CONFIG_PATH",
         )
 
         if connection_args:
             func = endpoint_option(func)
+            func = ca_option(func)
+            func = cert_option(func)
+            func = key_option(func)
+            func = config_option(func)
 
         @click.option(
             "-o",
@@ -95,6 +139,9 @@ def base_command(_func=None, *, connection_args: bool = True):
         @error_handler
         @wraps(func)
         def wrapper(*args, **kwargs):
+            if connection_args:
+                optional_config = kwargs.pop("optional_config_file")
+                kwargs["channel_ctx"] = create_channel(kwargs.pop("endpoint"), certificate_authority=kwargs.pop("ca"), client_certificate=kwargs.pop("cert"), client_key=kwargs.pop("key"))
             return func(*args, **kwargs)
 
         return wrapper

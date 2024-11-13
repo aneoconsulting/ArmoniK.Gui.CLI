@@ -9,10 +9,10 @@ from armonik_cli.core import Configuration, console
 
 
 COMMON_OPTIONS = cast(
-    OptionGroupDict, {"name": "Common options", "options": ["--debug", "--output", "--help"]}
+    OptionGroupDict, {"name": "Common options", "options": ["--output", "--config", "--debug", "--help"]}
 )
 CONNECTION_OPTIONS = cast(
-    OptionGroupDict, {"name": "Connection options", "options": ["--endpoint"]}
+    OptionGroupDict, {"name": "Connection options", "options": ["--endpoint", "--ca", "--cert", "--key"]}
 )
 click.rich_click.OPTION_GROUPS = {
     "armonik": [

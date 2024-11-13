@@ -1,4 +1,3 @@
-import grpc
 import rich_click as click
 
 from datetime import timedelta
@@ -6,6 +5,7 @@ from typing import List, Tuple, Union
 
 from armonik.client import ArmoniKSessions, ArmoniKTasks
 from armonik.common import SessionStatus, Session, TaskOptions, Task, TaskStatus, Direction
+from grpc import Channel
 
 from armonik_cli.core import console, base_command, KeyValuePairParam, TimeDeltaParam
 
@@ -22,9 +22,9 @@ def session_group() -> None:
 
 @session_group.command()
 @base_command   
-def list(endpoint: str, output: str, debug: bool) -> None:
+def list(channel_ctx: Channel, output: str, debug: bool) -> None:
     """List the sessions of an ArmoniK cluster."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         total, sessions = sessions_client.list_sessions()
 
@@ -40,9 +40,9 @@ def list(endpoint: str, output: str, debug: bool) -> None:
 @click.option("-s", "--stats", is_flag=True, help="Compute a set of statistics for the session.")
 @session_argument
 @base_command
-def get(endpoint: str, output: str, session_id: str, stats: bool, debug: bool) -> None:
+def get(channel_ctx: Channel, output: str, session_id: str, stats: bool, debug: bool) -> None:
     """Get details of a given session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.get_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -127,7 +127,7 @@ def get(endpoint: str, output: str, session_id: str, stats: bool, debug: bool) -
 )
 @base_command
 def create(
-    endpoint: str,
+    channel_ctx: Channel,
     max_retries: int,
     max_duration: timedelta,
     priority: int,
@@ -143,7 +143,7 @@ def create(
     debug: bool,
 ) -> None:
     """Create a new session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session_id = sessions_client.create_session(
             default_task_options=TaskOptions(
@@ -169,9 +169,9 @@ def create(
 @click.confirmation_option("--confirm", prompt="Are you sure you want to cancel this session?")
 @session_argument
 @base_command
-def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def cancel(channel_ctx: Channel, output: str, session_id: str, debug: bool) -> None:
     """Cancel a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.cancel_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -181,9 +181,9 @@ def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 @session_group.command()
 @session_argument
 @base_command
-def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def pause(channel_ctx: Channel, output: str, session_id: str, debug: bool) -> None:
     """Pause a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.pause_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -193,9 +193,9 @@ def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 @session_group.command()
 @session_argument
 @base_command
-def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def resume(channel_ctx: Channel, output: str, session_id: str, debug: bool) -> None:
     """Resume a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.resume_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -206,9 +206,9 @@ def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 @click.confirmation_option("--confirm", prompt="Are you sure you want to close this session?")
 @session_argument
 @base_command
-def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def close(channel_ctx: Channel, output: str, session_id: str, debug: bool) -> None:
     """Close a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.close_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -219,9 +219,9 @@ def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 @click.confirmation_option("--confirm", prompt="Are you sure you want to purge this session?")
 @session_argument
 @base_command
-def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def purge(channel_ctx: Channel, output: str, session_id: str, debug: bool) -> None:
     """Purge a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.purge_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -232,9 +232,9 @@ def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 @click.confirmation_option("--confirm", prompt="Are you sure you want to delete this session?")
 @session_argument
 @base_command
-def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def delete(channel_ctx: Channel, output: str, session_id: str, debug: bool) -> None:
     """Delete a session and associated data from the cluster."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.delete_session(session_id=session_id)
         session = _clean_up_status(session)
@@ -257,10 +257,10 @@ def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 @session_argument
 @base_command
 def stop_submission(
-    endpoint: str, session_id: str, clients_only: bool, workers_only: bool, output: str, debug: bool
+    channel_ctx: Channel, session_id: str, clients_only: bool, workers_only: bool, output: str, debug: bool
 ) -> None:
     """Stop clients and/or workers from submitting new tasks in a session."""
-    with grpc.insecure_channel(endpoint) as channel:
+    with channel_ctx as channel:
         sessions_client = ArmoniKSessions(channel)
         session = sessions_client.stop_submission_session(
             session_id=session_id, client=clients_only, worker=workers_only
@@ -274,7 +274,7 @@ def _clean_up_status(session: Session) -> Session:
     session.status = SessionStatus.name_from_value(session.status).split("_")[-1].capitalize()
     return session
 
-def _get_session_throughput(channel: grpc.Channel, session_id: str) -> Tuple[float, float]:
+def _get_session_throughput(channel: Channel, session_id: str) -> Tuple[float, float]:
     client = ArmoniKTasks(channel)
     total, first = client.list_tasks(task_filter=Task.session_id == session_id, page_size=1, sort_field=Task.created_at, sort_direction=Direction.ASC)
     _, last = client.list_tasks(task_filter=Task.session_id == session_id, page_size=1, sort_field=Task.ended_at, sort_direction=Direction.DESC)
@@ -285,7 +285,7 @@ def _get_session_throughput(channel: grpc.Channel, session_id: str) -> Tuple[flo
     return throughput, elapsed_time
 
 
-def _get_session_task_status(channel: grpc.Channel, session_id: str) -> Tuple[str, int]:
+def _get_session_task_status(channel: Channel, session_id: str) -> Tuple[str, int]:
     client = ArmoniKTasks(channel)
     task_status = client.count_tasks_by_status(task_filter=Task.session_id == session_id)
     return {k.name.capitalize(): v for k, v in task_status.items()}

@@ -60,10 +60,10 @@ def test_base_command(decorator, connection_args):
         pass
 
     assert test_func.__name__ == "test_func"
-    assert len(test_func.__click_params__) == 3 if connection_args else 2
+    assert len(test_func.__click_params__) == 7 if connection_args else 2
     assert (
         sorted([param.name for param in test_func.__click_params__])
-        == ["debug", "endpoint", "output"]
+        == ["ca", "cert", "debug", "endpoint", "key", "optional_config_file", "output"]
         if connection_args
         else ["debug", "output"]
     )
