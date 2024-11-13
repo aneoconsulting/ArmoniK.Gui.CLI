@@ -20,7 +20,8 @@ class Configuration:
     _config_keys = ["endpoint"]
     _default_config = {"endpoint": None}
 
-    def __init__(self, endpoint: str) -> None:
+    def __init__(self, path: Path, endpoint: str) -> None:
+        self.path = path
         self.endpoint = endpoint
 
     @classmethod
@@ -44,8 +45,21 @@ class Configuration:
         Returns:
             An instance of Configuration populated with values from the default file.
         """
-        with cls.default_path.open("r") as config_file:
-            return cls(**json.loads(config_file.read()))
+        return cls.load(cls._default_config)
+
+    @classmethod
+    def load(cls, path: Path) -> "Configuration":
+        """
+        Load a configuration from a given configuration file.
+
+        Args:
+            path: Path to the configuration file.
+
+        Returns:
+            An instance of Configuration populated with values from the configuration file.
+        """
+        with path.open("r") as config_file:
+            return cls(path=path, **json.loads(config_file.read()))
 
     def has(self, key: str) -> bool:
         """
@@ -98,5 +112,5 @@ class Configuration:
         """
         Save the current configuration values to the default configuration file.
         """
-        with self.default_path.open("w") as config_file:
+        with self.path.open("w") as config_file:
             config_file.write(json.dumps(self.to_dict(), indent=4))
