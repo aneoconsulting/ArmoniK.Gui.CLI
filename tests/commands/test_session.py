@@ -88,6 +88,41 @@ def test_session_get(mocker, cmd):
 @pytest.mark.parametrize(
     "cmd",
     [
+        f"session get --stats --endpoint {ENDPOINT} id",
+    ],
+)
+def test_session_get_stats(mocker, cmd):
+    from armonik_cli.commands import session
+    mocker.patch.object(session, "_get_session_throughput", return_value=(1., 1.))
+    mocker.patch.object(session, "_get_session_task_status", return_value={"Completed": 1})
+    mocker.patch.object(ArmoniKSessions, "get_session", return_value=deepcopy(raw_session))
+    result = run_cmd_and_assert_exit_code(cmd)
+    new_serialized_session = deepcopy(serialized_session)
+    new_serialized_session["Statistics"] = {
+        "Throughput": {
+            "Description": "Task throughput from creation date of first task to date of last completed task.",
+            "value": 1.0,
+            "Unit": "tasks/seconds"
+        },
+        "ElapsedTime": {
+            "Description": "Time elapsed between the creation date of the first task and the date of the last completed task.",
+            "value": 1.0,
+            "Unit": "seconds"
+        },
+        "TaskStatus": {
+            "Description": "Session task status.",
+            "Value": {
+                "Completed": 1
+            },
+            "Unit": ""
+        }
+    }
+    assert reformat_cmd_output(result.output, deserialize=True) == new_serialized_session
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
         f"session create --priority 1 --max-duration 01:00:0 --max-retries 2 --endpoint {ENDPOINT}",
         f"session create --priority 1 --max-duration 01:00:0 --max-retries 2 --endpoint {ENDPOINT} "
         "--default-partition bench --partition bench --partition htcmock --option op1=val1 --option opt2=val2 "

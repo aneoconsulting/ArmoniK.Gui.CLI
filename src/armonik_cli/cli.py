@@ -73,5 +73,5 @@ def cli(ctx: click.Context) -> None:
             Configuration.create_default_if_not_exists()
 
 
-cli.add_command(commands.session)
-cli.add_command(commands.config)
+cli.add_command(commands.session_group)
+cli.add_command(commands.config_group)

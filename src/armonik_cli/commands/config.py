@@ -12,13 +12,13 @@ from armonik_cli.core import console, Configuration, MutuallyExclusiveOption, ba
 key_argument = click.argument("key", required=True, type=str, metavar="KEY")
 
 
-@click.group()
-def config():
+@click.group(name="config")
+def config_group():
     """Display or change configuration settings for ArmoniK CLI."""
     pass
 
 
-@config.command()
+@config_group.command()
 @key_argument
 @base_command(connection_args=False)
 def get(key: str, output: str, debug: bool) -> None:
@@ -30,7 +30,7 @@ def get(key: str, output: str, debug: bool) -> None:
 
 
 # The function cannot be called 'set' directly, as this causes a conflict with the constructor of the built-in set object.
-@config.command("set")
+@config_group.command("set")
 @key_argument
 @click.argument("value", required=True, type=str, metavar="VALUE")
 @base_command(connection_args=False)
@@ -43,7 +43,7 @@ def set_(key: str, value: str, output: str, debug: bool) -> None:
     return console.print(f"Warning: '{key}' is not a known configuration key.")
 
 
-@config.command()
+@config_group.command()
 @base_command(connection_args=False)
 def list(output: str, debug: bool) -> None:
     """Display all configuration settings."""
@@ -51,7 +51,7 @@ def list(output: str, debug: bool) -> None:
     console.formatted_print(config.to_dict(), format=output)
 
 
-@config.command()
+@config_group.command()
 @click.option(
     "--local",
     is_flag=True,
