@@ -70,7 +70,7 @@ jobs:
           python -m uv pip install .[tests]
 
       - name: Testing
-        run: pytest tests --cov=armonik_cli --cov-report=term-missing
+        run: pytest tests --cov=armonik_cli --cov-config=.coveragerc --cov-report=term-missing --cov-append --cov-report xml:coverage.xml --cov-report html:coverage_report
 
       - name: Get Report
         uses: orgoro/coverage@3f13a558c5af7376496aa4848bf0224aead366ac
