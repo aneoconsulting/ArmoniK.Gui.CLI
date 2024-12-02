@@ -1,7 +1,6 @@
 name: Python Package
 
 on:
-  push:
   pull_request:
     branches:
       - main
@@ -46,7 +45,7 @@ jobs:
             packages-dir: dist/
             repository-url: https://test.pypi.org/legacy/
 
-      - name: Publish to PyPiTest
+      - name: Publish to PyPi
         if: github.event_name == 'release' # Publish on releases
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
