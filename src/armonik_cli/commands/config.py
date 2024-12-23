@@ -1,12 +1,9 @@
-import json
-
 import rich_click as click
 
-from pathlib import Path
+from pydantic import ValidationError
 
-from rich.prompt import Prompt
-
-from armonik_cli.core import console, Configuration, MutuallyExclusiveOption, base_command
+from armonik_cli.core import console, base_command
+from armonik_cli.settings import Settings
 
 
 key_argument = click.argument("key", required=True, type=str, metavar="KEY")
@@ -23,10 +20,11 @@ def config():
 @base_command(connection_args=False)
 def get(key: str, output: str, debug: bool) -> None:
     """Retrieve the value of a configuration setting by its KEY."""
-    config = Configuration.load_default()
-    if config.has(key):
-        return console.formatted_print({key: config.get(key)}, format=output)
-    return console.print(f"Warning: '{key}' is not a known configuration key.")
+    config = Settings.load_default_config()
+    try:
+        console.formatted_print({key: config.get_field(key)}, format=output)
+    except AttributeError:
+        console.print(f"Warning: '{key}' is not a known configuration key.")
 
 
 # The function cannot be called 'set' directly, as this causes a conflict with the constructor of the built-in set object.
@@ -36,55 +34,19 @@ def get(key: str, output: str, debug: bool) -> None:
 @base_command(connection_args=False)
 def set_(key: str, value: str, output: str, debug: bool) -> None:
     """Update a configuration setting with a VALUE for the given KEY."""
-    config = Configuration.load_default()
-    if config.has(key):
-        config.set(key, value)
-        return console.print(f"Updated '{key}' configuration with value '{value}'.")
-    return console.print(f"Warning: '{key}' is not a known configuration key.")
+    config = Settings.load_default_config()
+    try:
+        config.set_field(key, value)
+        config.save_default_config()
+        console.print(f"Updated '{key}' configuration with value '{config.get_field(key)}'.")
+    except AttributeError:
+        console.print(f"Warning: '{key}' is not a known configuration key.")
+    except ValidationError:
+        console.print(f"Error: '{value}' is not a correct value for key '{key}'.")
 
 
 @config.command()
 @base_command(connection_args=False)
-def list(output: str, debug: bool) -> None:
-    """Display all configuration settings."""
-    config = Configuration.load_default()
-    console.formatted_print(config.to_dict(), format=output)
-
-
-@config.command()
-@click.option(
-    "--local",
-    is_flag=True,
-    help="Set to a local cluster without TLS enabled.",
-    cls=MutuallyExclusiveOption,
-    mutual=["interactive", "source"],
-)
-@click.option(
-    "--interactive",
-    is_flag=True,
-    help="Use interactive prompts.",
-    cls=MutuallyExclusiveOption,
-    mutual=["local", "source"],
-)
-@click.option(
-    "--source",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Use the deployment generated folder to retrieve connection details.",
-    cls=MutuallyExclusiveOption,
-    mutual=["local", "interactive"],
-)
-@base_command(connection_args=False)
-def set_connection(local: bool, interactive: bool, source: str, output: str, debug: bool) -> None:
-    """Update all cluster connection configuration settings at once."""
-    endpoint = ""
-    if local:
-        endpoint = "172.17.119.85:5001"
-    elif interactive:
-        endpoint = Prompt.get_input(console, "Endpoint: ", password=False)
-    elif source:
-        with (Path(source) / "armonik-output.json").open() as output_file:
-            endpoint = json.loads(output_file.read())["armonik"]["control_plane_url"]
-    else:
-        return
-    config = Configuration.load_default()
-    config.set("endpoint", endpoint)
+def show(output: str, debug: bool) -> None:
+    """Display current configuration settings."""
+    console.formatted_print(Settings.load_default_config().dict(), format=output)

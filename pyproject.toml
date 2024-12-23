@@ -28,6 +28,8 @@ dependencies = [
     "armonik",
     "click",
     "lark",
+    "pydantic",
+    "pydantic-settings",
     "PyYAML",
     "rich_click",
 ]

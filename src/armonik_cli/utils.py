@@ -1,4 +1,30 @@
 from datetime import timedelta
+from logging import Filter, LogRecord
+from typing import Any
+
+
+class LogMsgStripFilter(Filter):
+    """Return a copy of the string with leading and trailing whitespace removed."""
+
+    def filter(self, record: LogRecord) -> bool:
+        try:
+            record.msg = record.msg.strip()
+        except AttributeError:
+            pass
+        return True
+
+
+class ContextFilter(Filter):
+    """Process context and return and empty dict when not provided"""
+
+    def filter(self, record: Any) -> bool:
+        try:
+            _ = record.context
+            if isinstance(_, dict):
+                record.context = json.dumps(_)
+        except AttributeError:
+            record.context = {}
+        return True
 
 
 def parse_time_delta(time_str: str) -> timedelta:

@@ -5,6 +5,7 @@ from typing import Dict, Union, Any
 
 from armonik.common import Session, TaskOptions
 from google._upb._message import ScalarMapContainer
+from pydantic import BaseModel, HttpUrl
 
 
 class CLIJSONEncoder(json.JSONEncoder):
@@ -38,6 +39,10 @@ class CLIJSONEncoder(json.JSONEncoder):
             return json.loads(str(obj).replace("'", '"'))
         elif any([isinstance(obj, api_type) for api_type in self.__api_types]):
             return {self.camel_case(k): v for k, v in obj.__dict__.items()}
+        elif isinstance(obj, BaseModel):
+            return json.loads(obj.model_dump_json())
+        elif isinstance(obj, HttpUrl):
+            return str(obj)
         else:
             return super().default(obj)
 

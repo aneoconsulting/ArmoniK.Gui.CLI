@@ -21,7 +21,7 @@ def session() -> None:
     pass
 
 
-@sessions.command()
+@session.command()
 @click.option(
     "-f",
     "--filter",
@@ -30,9 +30,12 @@ def session() -> None:
     help="An expression to filter the sessions to be listed.",
     metavar="FILTER EXPR",
 )
+@click.pass_context
 @base_command
-def list(endpoint: str, output: str, filter: Union[SessionFilter, None], debug: bool) -> None:
+def list(ctx, endpoint: str, output: str, filter: Union[SessionFilter, None], debug: bool) -> None:
     """List the sessions of an ArmoniK cluster."""
+    from armonik_cli.core.settings import Settings
+    Settings.from_click_inputs(ctx)
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
         total, sessions = sessions_client.list_sessions(session_filter=filter)
