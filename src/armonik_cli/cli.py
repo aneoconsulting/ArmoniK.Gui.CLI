@@ -5,7 +5,8 @@ from typing import cast
 from rich_click.utils import OptionGroupDict
 
 from armonik_cli import commands, __version__
-from armonik_cli.core import Configuration, console
+from armonik_cli.core import console
+from armonik_cli.settings import Settings
 
 
 COMMON_OPTIONS = cast(
@@ -57,6 +58,10 @@ click.rich_click.OPTION_GROUPS = {
         CONNECTION_OPTIONS,
         COMMON_OPTIONS,
     ],
+    "armonik config get": [COMMON_OPTIONS],
+    "armonik config set": [COMMON_OPTIONS],
+    "armonik config list": [COMMON_OPTIONS],
+    "armonik config show": [COMMON_OPTIONS],
 }
 
 
@@ -68,9 +73,10 @@ def cli(ctx: click.Context) -> None:
     ArmoniK CLI is a tool to monitor and manage ArmoniK clusters.
     """
     if "help" not in ctx.args:
-        if not Configuration.default_path.exists():
-            console.print(f"Created configuration file at {Configuration.default_path}")
-            Configuration.create_default_if_not_exists()
+        if not Settings.default_config_file.exists():
+            console.print(f"Created configuration file at {Settings.default_config_file}")
+            Settings.default_config_file.parent.mkdir(exist_ok=True)
+            Settings.default_config_file.open("w").write("{}")
 
 
 cli.add_command(commands.session)

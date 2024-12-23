@@ -1,4 +1,3 @@
-from armonik_cli.core.config import Configuration
 from armonik_cli.core.console import console
 from armonik_cli.core.decorators import base_command
 from armonik_cli.core.options import MutuallyExclusiveOption
