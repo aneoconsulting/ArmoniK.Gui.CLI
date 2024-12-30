@@ -14,6 +14,12 @@ def run_cmd_and_assert_exit_code(
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = runner.invoke(cli, cmd, input=input, env=env)
+        # Debugging: Print the result details
+        print(f"Command: {cmd}")
+        print(f"Result Output: {result.output}")
+        print(f"Result Exit Code: {result.exit_code}")
+        if result.exception:
+            print(f"Exception: {result.exception}")
     assert result.exit_code == exit_code
     return result
 

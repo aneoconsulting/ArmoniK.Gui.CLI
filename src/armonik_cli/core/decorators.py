@@ -4,7 +4,7 @@ import grpc
 import rich_click as click
 
 from armonik_cli.core.console import console
-from armonik_cli.exceptions import NotFoundError, InternalError
+from armonik_cli.exceptions import NotFoundError, InternalError, InternalArmoniKError
 
 
 def error_handler(func=None):
@@ -33,6 +33,10 @@ def error_handler(func=None):
 
             if status_code == grpc.StatusCode.NOT_FOUND:
                 raise NotFoundError(error_details)
+            elif status_code == grpc.StatusCode.INTERNAL:
+                raise InternalArmoniKError(f"An internal exception has occured:\n{error_details}")
+            elif status_code == grpc.StatusCode.UNKNOWN:
+                raise InternalArmoniKError(f"An unknown exception has occured:\n{error_details}")
             else:
                 raise InternalError("An internal fatal error occured.")
         except Exception:

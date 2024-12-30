@@ -4,8 +4,10 @@ import pytest
 from datetime import timedelta
 
 from armonik.common import Partition, Result, Session, Task
+from armonik.common.filter.filter import StringFilter
 
 from armonik_cli.core import KeyValuePairParam, TimeDeltaParam, FilterParam
+from armonik_cli.core.params import FieldParam
 
 
 @pytest.mark.parametrize(
@@ -66,3 +68,27 @@ def test_filter_parm_success(filter_type, input, output):
 def test_filter_parm_fail(filter_type, input):
     with pytest.raises(click.BadParameter):
         assert FilterParam(filter_type).convert(input, None, None)
+
+
+@pytest.mark.parametrize(
+    "base_struct, field_name",
+    [
+        ("Task", "task_options"),
+        ("Session", "options"),
+    ],
+)
+def test_field_param_invalid(mocker, base_struct, field_name):
+    with pytest.raises(click.BadParameter):
+        FieldParam(base_struct).convert(field_name, None, None)
+
+
+@pytest.mark.parametrize(
+    "base_struct, field_name",
+    [
+        ("Task", "session_id"),
+        ("Session", "session_id"),
+    ],
+)
+def test_field_param_valid(mocker, base_struct, field_name):
+    res = FieldParam(base_struct).convert(field_name, None, None)
+    assert type(res) is StringFilter
