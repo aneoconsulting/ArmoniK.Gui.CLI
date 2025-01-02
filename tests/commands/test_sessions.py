@@ -61,6 +61,11 @@ serialized_session = {
 }
 
 
+@pytest.mark.parametrize("flag", ["", "-h", "--help"])
+def test_session(flag):
+    run_cmd_and_assert_exit_code(f"session {flag}")
+
+
 @pytest.mark.parametrize(
     "cmd",
     [
