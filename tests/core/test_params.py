@@ -3,7 +3,9 @@ import pytest
 
 from datetime import timedelta
 
-from armonik_cli.core import KeyValuePairParam, TimeDeltaParam
+from armonik.common import Partition, Result, Session, Task
+
+from armonik_cli.core import KeyValuePairParam, TimeDeltaParam, FilterParam
 
 
 @pytest.mark.parametrize(
@@ -39,3 +41,28 @@ def test_timedelta_parm_success(input, output):
 def test_timedelta_parm_fail(input):
     with pytest.raises(click.BadParameter):
         assert TimeDeltaParam().convert(input, None, None)
+
+
+@pytest.mark.parametrize(
+    ("filter_type", "input", "output"),
+    [
+        ("Task", "output.error contains 'an error'", Task.output.error.contains("an error")),
+        ("Session", "options['key'] = value", Session.options["key"] == "value"),
+        ("Result", "result_id = id", Result.result_id == "id"),
+        ("Partition", "id = id", Partition.id == "id"),
+    ],
+)
+def test_filter_parm_success(filter_type, input, output):
+    assert FilterParam(filter_type).convert(input, None, None).to_dict() == output.to_dict()
+
+
+@pytest.mark.parametrize(
+    ("filter_type", "input"),
+    [
+        ("Task", "id = string with space"),
+        ("Result", 'size = "1"'),
+    ],
+)
+def test_filter_parm_fail(filter_type, input):
+    with pytest.raises(click.BadParameter):
+        assert FilterParam(filter_type).convert(input, None, None)
