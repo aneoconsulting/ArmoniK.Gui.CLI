@@ -5,7 +5,9 @@ import rich_click as click
 from datetime import timedelta
 from typing import cast, Tuple, Union
 
+from armonik import common
 from armonik.common import Filter
+from armonik.common.filter.filter import FType
 from lark.exceptions import VisitError, UnexpectedInput
 
 from armonik_cli.utils import parse_time_delta
@@ -135,3 +137,54 @@ class FilterParam(click.ParamType):
             self.fail(f"Filter syntax error: {error.get_context(value, span=40)}.", param, ctx)
         except VisitError as error:
             self.fail(str(error.orig_exc), param, ctx)
+
+
+class FieldParam(click.ParamType):
+    """
+    A custom Click parameter type that validates a field name against the possible fields of a base structure.
+
+    Attributes:
+        name: The name of the parameter type, used by Click.
+    """
+
+    name = "field"
+
+    def __init__(self, base_struct: str) -> None:
+        """
+        Initializes the FieldParam instance and gets the fields from the provided base structure.
+
+        Args:
+            base_struct: The base structure name to validate fields against (e.g., "Task", "Session").
+        """
+        super().__init__()
+        self.base_struct = base_struct.capitalize()
+        cls = getattr(common.filter, f"{self.base_struct}Filter")
+        self.possible_fields = [
+            field
+            for field in cls._fields.keys()
+            if cls._fields[field][0] != FType.NA and cls._fields[field][0] != FType.UNKNOWN
+        ]
+
+    def convert(
+        self, value: str, param: Union[click.Parameter, None], ctx: Union[click.Context, None]
+    ) -> Filter:
+        """
+        Converts the provided value into a field after checking if said value is supported.
+
+         Args:
+             value: The input field name to validate.
+             param: The parameter object passed by Click.
+             ctx: The context in which the parameter is being used.
+
+         Returns:
+             A field object.
+
+         Raises:
+             click.BadParameter: If the input field is not valid.
+        """
+        if value not in self.possible_fields:
+            self.fail(
+                f"{self.base_struct} has no attribute with the name {value}, only valid choices are {','.join(self.possible_fields)}"
+            )
+        cls = getattr(common, self.base_struct)
+        return getattr(cls, value)
