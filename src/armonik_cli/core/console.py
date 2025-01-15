@@ -65,7 +65,7 @@ class ArmoniKCLIConsole(Console):
 
         objs = obj if isinstance(obj, List) else [obj]
         for item in objs:
-            table.add_row(*[item[key] for _, key in table_cols])
+            table.add_row(*[str(item[key]) for _, key in table_cols])
 
         return table
 

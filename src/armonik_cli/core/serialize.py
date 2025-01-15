@@ -1,10 +1,10 @@
 import json
 
 from datetime import datetime, timedelta
-from typing import Dict, Union, Any
+from typing import Dict, List, Union, Any
 
-from armonik.common import Session, TaskOptions, Task
-from google._upb._message import ScalarMapContainer
+from armonik.common import Session, TaskOptions, Task, Partition
+from google._upb._message import ScalarMapContainer, RepeatedScalarContainer
 
 
 class CLIJSONEncoder(json.JSONEncoder):
@@ -16,9 +16,9 @@ class CLIJSONEncoder(json.JSONEncoder):
         __api_types: The list of ArmoniK API Python objects managed by this encoder.
     """
 
-    __api_types = [Session, TaskOptions, Task]
+    __api_types = [Session, TaskOptions, Task, Partition]
 
-    def default(self, obj: object) -> Union[str, Dict[str, Any]]:
+    def default(self, obj: object) -> Union[str, Dict[str, Any], List[Any]]:
         """
         Override the `default` method to serialize non-serializable objects to JSON.
 
@@ -36,6 +36,8 @@ class CLIJSONEncoder(json.JSONEncoder):
         # serializing the associated gRPC object.
         elif isinstance(obj, ScalarMapContainer):
             return json.loads(str(obj).replace("'", '"'))
+        elif isinstance(obj, RepeatedScalarContainer):
+            return list(obj)
         elif any([isinstance(obj, api_type) for api_type in self.__api_types]):
             return {self.camel_case(k): v for k, v in obj.__dict__.items()}
         else:
