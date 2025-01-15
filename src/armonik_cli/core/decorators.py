@@ -30,16 +30,19 @@ def error_handler(func=None):
         except grpc.RpcError as err:
             status_code = err.code()
             error_details = f"{err.details()}."
-
+            click.echo(
+                click.style(
+                    f"Failed with error:\n[status_code={status_code.name}]: {error_details}", "red"
+                )
+            )
+            if "debug" in kwargs and kwargs["debug"]:
+                console.print_exception()
             if status_code == grpc.StatusCode.NOT_FOUND:
                 raise NotFoundError(error_details)
             else:
                 raise InternalError("An internal fatal error occured.")
         except Exception:
-            if "debug" in kwargs and kwargs["debug"]:
-                console.print_exception()
-            else:
-                raise InternalError("An internal fatal error occured.")
+            console.print_exception()
 
     return wrapper
 
