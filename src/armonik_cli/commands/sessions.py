@@ -21,7 +21,7 @@ def sessions() -> None:
     pass
 
 
-@sessions.command()
+@sessions.command(name="list")
 @click.option(
     "-f",
     "--filter",
@@ -31,7 +31,9 @@ def sessions() -> None:
     metavar="FILTER EXPR",
 )
 @base_command
-def list(endpoint: str, output: str, filter: Union[SessionFilter, None], debug: bool) -> None:
+def session_list(
+    endpoint: str, output: str, filter: Union[SessionFilter, None], debug: bool
+) -> None:
     """List the sessions of an ArmoniK cluster."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -45,10 +47,10 @@ def list(endpoint: str, output: str, filter: Union[SessionFilter, None], debug: 
     # console.print(f"\n{total} sessions found.")
 
 
-@sessions.command()
+@sessions.command(name="get")
 @session_argument
 @base_command
-def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def session_get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Get details of a given session."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -57,7 +59,7 @@ def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="create")
 @click.option(
     "--max-retries",
     type=int,
@@ -126,7 +128,7 @@ def get(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     metavar="KEY=VALUE",
 )
 @base_command
-def create(
+def session_create(
     endpoint: str,
     max_retries: int,
     max_duration: timedelta,
@@ -165,11 +167,11 @@ def create(
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="cancel")
 @click.confirmation_option("--confirm", prompt="Are you sure you want to cancel this session?")
 @session_argument
 @base_command
-def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def session_cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Cancel a session."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -178,10 +180,10 @@ def cancel(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="pause")
 @session_argument
 @base_command
-def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def session_pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Pause a session."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -190,10 +192,10 @@ def pause(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="resume")
 @session_argument
 @base_command
-def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def session_resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Resume a session."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -202,11 +204,11 @@ def resume(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="close")
 @click.confirmation_option("--confirm", prompt="Are you sure you want to close this session?")
 @session_argument
 @base_command
-def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def session_close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Close a session."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -215,11 +217,11 @@ def close(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="purge")
 @click.confirmation_option("--confirm", prompt="Are you sure you want to purge this session?")
 @session_argument
 @base_command
-def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def session_purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Purge a session."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -228,11 +230,11 @@ def purge(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="delete")
 @click.confirmation_option("--confirm", prompt="Are you sure you want to delete this session?")
 @session_argument
 @base_command
-def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
+def session_delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
     """Delete a session and associated data from the cluster."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
@@ -241,7 +243,7 @@ def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
         console.formatted_print(session, format=output, table_cols=SESSION_TABLE_COLS)
 
 
-@sessions.command()
+@sessions.command(name="stop-submission")
 @click.option(
     "--clients-only",
     is_flag=True,
@@ -256,7 +258,7 @@ def delete(endpoint: str, output: str, session_id: str, debug: bool) -> None:
 )
 @session_argument
 @base_command
-def stop_submission(
+def session_stop_submission(
     endpoint: str, session_id: str, clients_only: bool, workers_only: bool, output: str, debug: bool
 ) -> None:
     """Stop clients and/or workers from submitting new tasks in a session."""
