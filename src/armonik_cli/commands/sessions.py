@@ -5,10 +5,11 @@ from datetime import timedelta
 from typing import List, Tuple, Union
 
 from armonik.client.sessions import ArmoniKSessions
-from armonik.common import SessionStatus, Session, TaskOptions
-from armonik.common.filter import SessionFilter
+from armonik.common import SessionStatus, Session, TaskOptions, Direction
+from armonik.common.filter import SessionFilter, Filter
 
 from armonik_cli.core import console, base_command, KeyValuePairParam, TimeDeltaParam, FilterParam
+from armonik_cli.core.params import FieldParam
 
 
 SESSION_TABLE_COLS = [("ID", "SessionId"), ("Status", "Status"), ("CreatedAt", "CreatedAt")]
@@ -25,23 +26,63 @@ def sessions() -> None:
 @click.option(
     "-f",
     "--filter",
+    "filter_with",
     type=FilterParam("Session"),
     required=False,
     help="An expression to filter the sessions to be listed.",
     metavar="FILTER EXPR",
 )
+@click.option(
+    "--sort-by",
+    type=FieldParam("Session"),
+    required=False,
+    help="Attribute of session to sort with.",
+)
+@click.option(
+    "--sort-direction",
+    type=click.Choice(["asc", "desc"], case_sensitive=False),
+    default="asc",
+    required=False,
+    help="Whether to sort by ascending or by descending order.",
+)
+@click.option(
+    "--page", default=-1, help="Get a specific page, it defaults to -1 which gets all pages."
+)
+@click.option("--page-size", default=100, help="Number of elements in each page")
 @base_command
-def session_list(
-    endpoint: str, output: str, filter: Union[SessionFilter, None], debug: bool
+def list(
+    endpoint: str,
+    output: str,
+    filter_with: Union[SessionFilter, None],
+    sort_by: Filter,
+    sort_direction: str,
+    page: int,
+    page_size: int,
+    debug: bool,
 ) -> None:
     """List the sessions of an ArmoniK cluster."""
     with grpc.insecure_channel(endpoint) as channel:
         sessions_client = ArmoniKSessions(channel)
-        total, sessions = sessions_client.list_sessions(session_filter=filter)
+        curr_page = page if page > 0 else 0
+        session_list = []
+        while True:
+            total, sessions = sessions_client.list_sessions(
+                session_filter=filter_with,
+                sort_field=Session.session_id if sort_by is None else sort_by,
+                sort_direction=Direction.ASC
+                if sort_direction.capitalize() == "ASC"
+                else Direction.DESC,
+                page=curr_page,
+                page_size=page_size,
+            )
+            session_list += sessions
+            if page > 0 or len(session_list) >= total:
+                break
+            curr_page += 1
 
     if total > 0:
-        sessions = [_clean_up_status(s) for s in sessions]
-        console.formatted_print(sessions, format=output, table_cols=SESSION_TABLE_COLS)
+        session_list = [_clean_up_status(s) for s in session_list]
+        console.formatted_print(session_list, format=output, table_cols=SESSION_TABLE_COLS)
 
     # TODO: Use logger to display this information
     # console.print(f"\n{total} sessions found.")
