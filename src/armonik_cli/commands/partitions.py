@@ -31,7 +31,7 @@ def partitions() -> None:
 )
 @click.option(
     "--sort-by",
-    type=FieldParam("Task"),
+    type=FieldParam("Partition"),
     required=False,
     help="Attribute of partition to sort with.",
 )
