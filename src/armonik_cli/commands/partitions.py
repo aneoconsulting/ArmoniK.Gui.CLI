@@ -19,7 +19,7 @@ def partitions() -> None:
     pass
 
 
-@partitions.command()
+@partitions.command(name="list")
 @click.option(
     "-f",
     "--filter",
@@ -47,7 +47,7 @@ def partitions() -> None:
 )
 @click.option("--page-size", default=100, help="Number of elements in each page")
 @base_command
-def list(
+def partition_list(
     endpoint: str,
     output: str,
     filter_with: Union[PartitionFilter, None],
@@ -83,10 +83,10 @@ def list(
             )
 
 
-@partitions.command()
+@partitions.command(name="get")
 @click.argument("partition-ids", type=str, nargs=-1, required=True)
 @base_command
-def get(endpoint: str, output: str, partition_ids: List[str], debug: bool) -> None:
+def partition_get(endpoint: str, output: str, partition_ids: List[str], debug: bool) -> None:
     """Get a specific partition from an ArmoniK cluster given a <PARTITION-ID>."""
     with grpc.insecure_channel(endpoint) as channel:
         partitions_client = ArmoniKPartitions(channel)

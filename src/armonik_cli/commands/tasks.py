@@ -21,7 +21,7 @@ def tasks() -> None:
     pass
 
 
-@tasks.command()
+@tasks.command(name="list")
 @click.argument("session-id", required=True, type=str)
 @click.option(
     "-f",
@@ -47,7 +47,7 @@ def tasks() -> None:
 )
 @click.option("--page-size", default=100, help="Number of elements in each page")
 @base_command
-def list(
+def tasks_list(
     endpoint: str,
     output: str,
     session_id: str,
@@ -77,7 +77,7 @@ def list(
             )
             tasks_list += curr_tasks_list
 
-            if page >= 0 or total < page_size or curr_page > (total // page_size):
+            if page > 0 or len(tasks_list) >= total:
                 break
             curr_page += 1
 
@@ -86,10 +86,10 @@ def list(
         console.formatted_print(tasks_list, format=output, table_cols=TASKS_TABLE_COLS)
 
 
-@tasks.command()
+@tasks.command(name="get")
 @click.argument("task-ids", type=str, nargs=-1, required=True)
 @base_command
-def get(endpoint: str, output: str, task_ids: List[str], debug: bool):
+def tasks_get(endpoint: str, output: str, task_ids: List[str], debug: bool):
     """Get a detailed overview of set of tasks given their ids."""
     with grpc.insecure_channel(endpoint) as channel:
         tasks_client = ArmoniKTasks(channel)
@@ -101,17 +101,17 @@ def get(endpoint: str, output: str, task_ids: List[str], debug: bool):
         console.formatted_print(tasks, format=output, table_cols=TASKS_TABLE_COLS)
 
 
-@tasks.command()
+@tasks.command(name="cancel")
 @click.argument("task-ids", type=str, nargs=-1, required=True)
 @base_command
-def cancel(endpoint: str, output: str, task_ids: List[str], debug: bool):
+def tasks_cancel(endpoint: str, output: str, task_ids: List[str], debug: bool):
     "Cancel tasks given their ids. (They don't have to be in the same session necessarily)."
     with grpc.insecure_channel(endpoint) as channel:
         tasks_client = ArmoniKTasks(channel)
         tasks_client.cancel_tasks(task_ids)
 
 
-@tasks.command()
+@tasks.command(name="create")
 @click.option(
     "--session-id",
     type=str,
@@ -198,7 +198,7 @@ def cancel(endpoint: str, output: str, task_ids: List[str], debug: bool):
     metavar="KEY=VALUE",
 )
 @base_command
-def create(
+def tasks_create(
     endpoint: str,
     output: str,
     session_id: str,
