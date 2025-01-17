@@ -4,6 +4,7 @@ import grpc
 import rich_click as click
 
 from armonik_cli.core.console import console
+from armonik_cli.core.options import GlobalOption
 from armonik_cli.exceptions import NotFoundError, InternalError, InternalArmoniKError
 
 
@@ -48,6 +49,16 @@ def error_handler(func=None):
     return wrapper
 
 
+def base_group(func):
+    @global_cluster_config_options
+    @global_common_options
+    @wraps(func)
+    def wrapper(endpoint: str, output: str, debug: bool, *args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 def base_command(func=None):
     """Decorator to add common CLI options to a Click command function, including
     'endpoint', 'output', and 'debug'. These options are automatically passed
@@ -75,26 +86,8 @@ def base_command(func=None):
         return partial(base_command)
 
     # Define the wrapper function with added Click options
-    @click.option(
-        "-e",
-        "--endpoint",
-        type=str,
-        required=True,
-        help="Endpoint of the cluster to connect to.",
-        metavar="ENDPOINT",
-    )
-    @click.option(
-        "-o",
-        "--output",
-        type=click.Choice(["yaml", "json", "table"], case_sensitive=False),
-        default="json",
-        show_default=True,
-        help="Commands output format.",
-        metavar="FORMAT",
-    )
-    @click.option(
-        "--debug", is_flag=True, default=False, help="Print debug logs and internal errors."
-    )
+    @global_cluster_config_options
+    @global_common_options
     @error_handler
     @wraps(func)
     def wrapper(endpoint: str, output: str, debug: bool, *args, **kwargs):
@@ -104,3 +97,52 @@ def base_command(func=None):
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def endpoint_option():
+    return click.option(
+        "-e",
+        "--endpoint",
+        type=str,
+        required=True,
+        help="Endpoint of the cluster to connect to.",
+        metavar="ENDPOINT",
+        cls=GlobalOption,
+    )
+
+
+def output_option():
+    return click.option(
+        "-o",
+        "--output",
+        type=click.Choice(["yaml", "json", "table"], case_sensitive=False),
+        default="json",
+        show_default=True,
+        help="Commands output format.",
+        metavar="FORMAT",
+        cls=GlobalOption,
+    )
+
+
+def debug_option():
+    return click.option(
+        "--debug",
+        is_flag=True,
+        default=False,
+        help="Print debug logs and internal errors.",
+        cls=GlobalOption,
+    )
+
+
+def apply_click_params(command, *click_params):
+    for click_param in click_params:
+        command = click_param(command)
+    return command
+
+
+def global_cluster_config_options(f):
+    return apply_click_params(f, endpoint_option())
+
+
+def global_common_options(f):
+    return apply_click_params(f, output_option(), debug_option())
