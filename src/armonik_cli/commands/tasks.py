@@ -22,7 +22,6 @@ def tasks() -> None:
 
 
 @tasks.command(name="list")
-@click.argument("session-id", required=True, type=str)
 @click.option(
     "-f",
     "--filter",
@@ -50,7 +49,6 @@ def tasks() -> None:
 def tasks_list(
     endpoint: str,
     output: str,
-    session_id: str,
     filter_with: Union[TaskFilter, None],
     sort_by: Filter,
     sort_direction: str,
@@ -58,16 +56,14 @@ def tasks_list(
     page_size: int,
     debug: bool,
 ) -> None:
-    "List all tasks for a session with id <SESSION_ID>."
+    "List all tasks."
     with grpc.insecure_channel(endpoint) as channel:
         tasks_client = ArmoniKTasks(channel)
         curr_page = page if page > 0 else 0
         tasks_list = []
         while True:
             total, curr_tasks_list = tasks_client.list_tasks(
-                task_filter=(Task.session_id == session_id) & filter_with
-                if filter_with is not None
-                else (Task.session_id == session_id),
+                task_filter=filter_with,
                 sort_field=Task.id if sort_by is None else sort_by,
                 sort_direction=Direction.ASC
                 if sort_direction.capitalize() == "ASC"

@@ -219,7 +219,7 @@ serialized_tasks = [
 ]
 
 
-@pytest.mark.parametrize("cmd", [f"task list id -e {ENDPOINT} --debug"])
+@pytest.mark.parametrize("cmd", [f"task list -e {ENDPOINT} --debug"])
 def test_task_list(mocker, cmd):
     mocker.patch.object(ArmoniKTasks, "list_tasks", return_value=(2, deepcopy(raw_tasks)))
     result = run_cmd_and_assert_exit_code(cmd)
