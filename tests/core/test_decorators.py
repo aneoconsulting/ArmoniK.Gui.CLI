@@ -58,6 +58,6 @@ def test_base_command(decorator):
 
     assert test_func.__name__ == "test_func"
     assert len(test_func.__click_params__) == 3
-    assert test_func.__click_params__[0].name == "debug"
-    assert test_func.__click_params__[1].name == "output"
+    assert test_func.__click_params__[0].name == "output"
+    assert test_func.__click_params__[1].name == "debug"
     assert test_func.__click_params__[2].name == "endpoint"
